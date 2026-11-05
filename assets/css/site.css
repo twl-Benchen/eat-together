@@ -106,6 +106,13 @@ code { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size:
 .btn.secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
 .tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--cream); color: var(--owe); border: 1px solid var(--owe-line); }
 
+/* 可複製的指令框 */
+.prompt {
+  margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 14px; line-height: 1.7;
+  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink);
+}
+
 /* 表單（工具頁） */
 .field {
   width: 100%; min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line);

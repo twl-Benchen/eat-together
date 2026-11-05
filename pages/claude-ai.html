@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>在 claude.ai 使用 · EatTogether</title>
+<meta name="description" content="把記帳 App 放到 claude.ai 變成 Artifact，讓朋友的手機即時同步；要給 Claude 哪些檔案、怎麼分享、怎麼保護隱私。">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+<header class="site-header" data-site-header>
+  <div class="wrap">
+    <a class="brand" href="../index.html"><img src="../assets/img/favicon.svg" alt=""><span><b>EatTogether</b> 飯友帳本</span></a>
+    <nav class="site-nav" aria-label="網站導覽">
+      <a href="../index.html">首頁</a>
+      <a href="../app/index.html">記帳</a>
+      <a href="../pages/guide.html">教學</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page wrap">
+  <div class="page-head">
+    <p class="eyebrow">教學</p>
+    <h1>在 claude.ai 使用</h1>
+    <p class="lead">想讓大家的手機看到同一份帳？照這頁做，五分鐘完成。</p>
+  </div>
+  <h2>為什麼要用 claude.ai 版</h2>
+  <p>直接打開這個網站時，帳本是<b>本機模式</b>：資料只存在自己的手機，朋友看不到。把同一個 App 放到 claude.ai 上變成 Artifact，就能使用 claude.ai 的共享資料庫，每個人在自己手機上記帳，大家即時看到同一份帳。</p>
+  <div class="grid-2">
+    <div class="card"><h3>本機模式（這個網站）</h3><ul><li>不用帳號、打開就能用</li><li>資料只在這支手機</li><li>可以匯出／匯入備份</li></ul></div>
+    <div class="card"><h3>claude.ai 版</h3><ul><li>每個人都要有 claude.ai 帳號</li><li>多支手機即時同步</li><li>頭貼存在雲端</li></ul></div>
+  </div>
+
+  <h2>需要準備什麼</h2>
+  <ul>
+    <li>一個可以建立 Artifact 的 claude.ai 帳號（用 claude.ai 的對話或 Claude Code 都可以）。</li>
+    <li>這三個檔案：<a href="../app/index.html">app/index.html</a>、<a href="../app/ledger.js">app/ledger.js</a>、<a href="../app/store.js">app/store.js</a>。可以從 <a href="https://github.com/twl-Benchen/eat-together">GitHub repo</a> 下載，或直接把 repo 網址給 Claude。</li>
+  </ul>
+
+  <h2>步驟</h2>
+  <ol>
+    <li>打開 Claude，把上面三個檔案附上（或貼 repo 網址）。</li>
+    <li>貼上下面這段指令，讓 Claude 幫你發佈。</li>
+    <li>發佈完成後打開 Artifact，建立帳本、輸入成員。</li>
+    <li>用 Artifact 右上角的<b>分享</b>，輸入朋友的 email，權限選「<b>編輯者</b>」。</li>
+  </ol>
+
+  <div class="card">
+    <h3>複製給 Claude 的指令</h3>
+<pre class="prompt" id="prompt">請把附上的 EatTogether 記帳 App 發佈成一個 claude.ai Artifact：
+1. 主頁面用 app/index.html，ledger.js 和 store.js 當作同一個 Artifact 的附屬檔案一起發佈（路徑保持 ledger.js、store.js）。
+2. capabilities 開啟：db、user、assets（都用預設設定）。
+3. 不要修改計算邏輯和資料格式；只需要做發佈所需的最小調整。
+4. 發佈後讀一次 members 和 entries 兩個集合，確認資料庫可以用。
+5. 給我 Artifact 連結，並提醒我：分享時要邀請朋友 email 當「編輯者」，不要開公開連結。</pre>
+    <button class="btn secondary" type="button" id="copyBtn">複製指令</button>
+    <span class="small muted" id="copyMsg" aria-live="polite"></span>
+  </div>
+
+  <h2>分享時要注意</h2>
+  <ul>
+    <li><b>不要開「公開連結」</b>。開了之後，用 email 邀請的朋友就不能記帳。</li>
+    <li>朋友也要登入 claude.ai 才能打開。</li>
+    <li>頭貼可能只有你自己看得到（平台限制）；看不到時會顯示名字縮寫。</li>
+  </ul>
+
+  <h2>隱私：會不會看到別人的帳？</h2>
+  <ul>
+    <li><b>每個 Artifact 都有自己獨立的資料庫</b>。你發佈的那一份是全新、空的帳本，看不到作者或其他人的帳，別人也看不到你的。</li>
+    <li>這個 repo 裡只有程式碼，<b>沒有任何人的名字或帳務資料</b>；教學截圖用的是虛構的「小明、小華、阿傑」。</li>
+    <li>Artifact 預設只有你看得到。只分享給一起吃飯的朋友，<b>不要把自己的 Artifact 連結貼到公開的地方</b>（社群、作業區、GitHub）。</li>
+    <li>匯出的備份檔裡有名字和金額，傳給別人前想一下。</li>
+  </ul>
+
+  <script>
+    (() => {
+      const btn = document.getElementById("copyBtn"), msg = document.getElementById("copyMsg"), pre = document.getElementById("prompt");
+      btn.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(pre.textContent); msg.textContent = "已複製"; }
+        catch (e) {
+          const r = document.createRange(); r.selectNodeContents(pre);
+          const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+          msg.textContent = "已選取，請按複製";
+        }
+      });
+    })();
+  </script>
+</main>
+
+<footer class="site-footer" data-site-footer>
+  <div class="wrap">
+    <span>© <span data-year>2026</span> EatTogether 飯友帳本</span>
+    <a href="../index.html">回首頁</a>
+    <a href="../pages/devlog.html">開發日誌</a>
+  </div>
+</footer>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>
