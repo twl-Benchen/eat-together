@@ -1,0 +1,1980 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>飯友帳本 · EatTogether</title>
+<meta name="description" content="一起吃飯互相代墊時，把硬幣從代墊的人拖到被代墊的人就能記帳，一鍵抵銷債務。">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap">
+<style>
+:root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+/* Layout: one-screen phone app. Header, my totals, a dotted drag stage that fills the middle,
+   the offset action, bottom tabs. Entry, pair and offset panels rise from the bottom edge.
+   Palette: Morandi slate blue-gray with apricot as the only warm accent (要付 = apricot, 要收 = blue-gray). */
+:root {
+  --bg: #EEF2F6;
+  --surface: #FFFFFF;
+  --surface-2: #F6F8FA;
+  --ink: #2E3A4F;
+  --muted: #5F6D82;
+  --line: #DDE5ED;
+  --accent: #435369;
+  --accent-ink: #FFFFFF;
+  --blue: #536D82;
+  --owe: #A65F17;
+  --owe-line: #E08E2E;
+  --get: #4E6880;
+  --get-line: #6F82A0;
+  --other-line: #AEBFCF;
+  --apricot: #F5B461;
+  --cream: #FFF4E3;
+  --glow: #B8C8E6;
+  --toast-act: #F5B461;
+  --on-member: #FFFFFF;
+  --m0: #62778F; --m1: #A06D76; --m2: #6E8468; --m3: #A9773A;
+  --m4: #7C7499; --m5: #4F7E7E; --m6: #8A7A5A; --m7: #86627C;
+  --scrim: rgb(30 40 56 / .42);
+  --shadow: 0 1px 2px rgb(46 58 79 / .08), 0 8px 24px rgb(46 58 79 / .10);
+  --f-display: "LXGW WenKai TC", "Kaiti TC", "STKaiti", "BiauKai", "KaiTi", serif;
+  --f-body: "Noto Sans TC", "PingFang TC", "Heiti TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --f-num: "Nunito", "Noto Sans TC", ui-rounded, system-ui, sans-serif;
+  --r: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161C25; --surface: #1F2732; --surface-2: #252F3B; --ink: #E6ECF2; --muted: #9AA8B8; --line: #334051;
+    --accent: #A9BED6; --accent-ink: #142030; --blue: #A9BED6; --owe: #F2B36A; --owe-line: #E8A055;
+    --get: #A9BED6; --get-line: #8FA6C4; --other-line: #4F5F73; --apricot: #F5B461; --cream: #3A3226; --glow: #33465E;
+    --toast-act: #9A5A12; --scrim: rgb(0 0 0 / .55); --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161C25; --surface: #1F2732; --surface-2: #252F3B; --ink: #E6ECF2; --muted: #9AA8B8; --line: #334051;
+  --accent: #A9BED6; --accent-ink: #142030; --blue: #A9BED6; --owe: #F2B36A; --owe-line: #E8A055;
+  --get: #A9BED6; --get-line: #8FA6C4; --other-line: #4F5F73; --apricot: #F5B461; --cream: #3A3226; --glow: #33465E;
+  --toast-act: #9A5A12; --scrim: rgb(0 0 0 / .55); --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .35);
+  color-scheme: dark;
+}
+
+html { height: 100%; box-sizing: border-box; }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  height: 100%; overflow: hidden; background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 3px solid var(--apricot); outline-offset: 2px; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; opacity: 0; }
+
+#app { height: 100%; display: flex; flex-direction: column; }
+
+/* header */
+.top { display: flex; align-items: center; gap: 10px; padding-block: 10px 4px; min-width: 0; }
+.top h1 {
+  margin: 0; min-width: 0; flex: 0 1 auto; position: relative; padding-bottom: 6px;
+  font-family: var(--f-display); font-weight: 700; font-size: 22px; letter-spacing: .04em; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.top h1::after { content: ""; position: absolute; left: 0; bottom: 0; width: 28px; height: 4px; border-radius: 2px; background: var(--apricot); }
+.sync { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--other-line); }
+.sync[data-s="synced"]::before { background: var(--get-line); }
+.sync[data-s="saving"]::before, .sync[data-s="syncing"]::before { background: var(--apricot); }
+.sync[data-s="stale"]::before, .sync[data-s="error"]::before, .sync[data-s="nodb"]::before { background: var(--owe-line); }
+.me-btn {
+  margin-left: auto; flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; min-height: 40px;
+  padding: 4px 12px 4px 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+  font-weight: 700; font-size: 14px; max-width: 46%;
+}
+.me-btn span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.banner {
+  margin-top: 6px; padding: 8px 12px; border-radius: 10px; font-size: 13px;
+  background: var(--cream); border: 1px solid var(--owe-line); color: var(--ink);
+}
+.banner button { margin-left: 8px; border: 0; background: none; color: var(--owe); font-weight: 700; padding: 0; text-decoration: underline; }
+
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-block: 8px 28px; }
+
+/* my totals */
+.summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-block: 8px 6px; }
+.stat { background: var(--surface); border-radius: var(--r); padding: 8px 14px; min-width: 0; box-shadow: var(--shadow); }
+.stat .k { font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+.stat .v { font-family: var(--f-num); font-weight: 800; font-size: 24px; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.stat.owe { background: var(--cream); }
+.stat.owe .v { color: var(--owe); }
+.stat.get .v { color: var(--get); }
+.summary .whole { grid-column: 1 / -1; }
+
+/* stage */
+.stage-wrap { flex: 1; min-height: 250px; display: flex; padding-block: 4px; }
+.stage {
+  position: relative; flex: 1; border-radius: 22px; overflow: hidden;
+  border: 1px solid var(--line); background-color: var(--surface-2);
+  background-image: radial-gradient(var(--line) 1.1px, transparent 1.4px); background-size: 18px 18px;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.edge line { stroke-linecap: round; transition: stroke-width .35s ease; }
+.e-owe line { stroke: var(--owe-line); } .e-owe path { fill: var(--owe-line); }
+.e-get line { stroke: var(--get-line); } .e-get path { fill: var(--get-line); }
+.e-other line { stroke: var(--other-line); } .e-other path { fill: var(--other-line); }
+#ball { fill: var(--apricot); stroke: var(--owe-line); stroke-width: 2; }
+.trail-dot { fill: var(--apricot); }
+#ballText { fill: #6B3F0C; font-family: var(--f-num); font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+
+.node {
+  position: absolute; left: 0; top: 0; width: 104px; padding: 0; border: 0; background: none;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
+  transition: transform .35s cubic-bezier(.2,.8,.2,1);
+}
+.av, .mini-av {
+  display: grid; place-items: center; border-radius: 50%; overflow: hidden; flex: none;
+  background: var(--c, var(--muted)); color: var(--on-member); font-family: var(--f-display); font-weight: 700;
+}
+.av img, .mini-av img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; -webkit-user-drag: none; }
+.av {
+  width: var(--d, 68px); height: var(--d, 68px); font-size: calc(var(--d, 68px) * .3); letter-spacing: .02em;
+  box-shadow: 0 0 0 3px var(--surface-2), 0 0 0 4px var(--line), var(--shadow);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.node.me .av { box-shadow: 0 0 0 3px var(--surface-2), 0 0 0 5px var(--apricot), var(--shadow); }
+.node.selected .av, .node.target .av { box-shadow: 0 0 0 3px var(--surface-2), 0 0 0 7px var(--blue), 0 0 22px var(--glow); }
+.nm, .nb { background: var(--surface-2); padding: 0 5px; border-radius: 6px; }
+.nm { margin-top: 6px; font-weight: 700; font-size: 14px; max-width: 104px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nb { font-family: var(--f-num); font-size: 12px; font-weight: 800; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.nb.pos { color: var(--get); } .nb.neg { color: var(--owe); }
+
+.elabel {
+  position: absolute; left: 0; top: 0; min-height: 30px; padding: 3px 10px; border-radius: 999px;
+  background: var(--surface); border: 2px solid var(--lc, var(--other-line)); color: var(--lt, var(--muted));
+  font-family: var(--f-num); font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; line-height: 1.5;
+  touch-action: manipulation; white-space: nowrap; box-shadow: var(--shadow);
+  transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .2s;
+}
+.elabel::before { content: ""; position: absolute; inset: -8px; }
+.elabel.e-owe { --lc: var(--owe-line); --lt: var(--owe); background: var(--cream); }
+.elabel.e-get { --lc: var(--get-line); --lt: var(--get); }
+.stage.dragging .elabel { pointer-events: none; opacity: .45; }
+
+.hint {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 24px);
+  padding: 4px 12px; border-radius: 999px; font-size: 13px; color: var(--muted); background: var(--surface);
+  border: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+}
+.hint.strong { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; font-size: 14px; }
+.stage-empty {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 24px; text-align: center; color: var(--muted);
+}
+.stage-empty b { color: var(--ink); font-family: var(--f-display); font-size: 20px; }
+
+.offset-row { padding-block: 6px 10px; }
+.offset-btn {
+  width: 100%; min-height: 52px; border-radius: var(--r); border: 0; background: var(--accent); color: var(--accent-ink);
+  font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.offset-btn small { font-weight: 700; font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--apricot); color: #2E3A4F; }
+.offset-btn:disabled { background: transparent; color: var(--muted); border: 1.5px dashed var(--line); }
+
+/* tabs */
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); background: var(--surface); }
+.tabs button {
+  min-height: 56px; border: 0; background: none; color: var(--muted); font-size: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabs button[aria-current="page"] { color: var(--ink); font-weight: 700; }
+.tabs button[aria-current="page"] svg { stroke: var(--owe-line); }
+
+/* panels */
+.scrim { position: fixed; inset: 0; z-index: 20; background: var(--scrim); opacity: 0; transition: opacity .22s ease; }
+.scrim.open { opacity: 1; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; margin: 0 auto; max-width: 560px;
+  max-height: calc(100% - 20px - env(safe-area-inset-top, 0px)); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); border-radius: 24px 24px 0 0; box-shadow: 0 -8px 30px rgb(0 0 0 / .2);
+  padding-top: 8px; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 10px;
+  transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1);
+}
+.sheet.open { transform: none; }
+.grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line); align-self: center; flex: none; }
+.sheet-head { display: flex; align-items: center; gap: 10px; }
+.sheet-head h2 { margin: 0; flex: 1; min-width: 0; font-family: var(--f-display); font-size: 20px; text-wrap: balance; }
+.icon-btn {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2);
+  display: grid; place-items: center; font-size: 18px; line-height: 1;
+}
+.icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.seg { flex: 1; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.seg button { min-height: 36px; border: 0; border-radius: 9px; background: none; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+.who { display: flex; align-items: center; justify-content: center; gap: 6px 8px; flex-wrap: wrap; }
+.pchip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px 3px 3px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line); font-weight: 700; max-width: 38%; min-width: 0;
+}
+.pchip > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-av { width: 28px; height: 28px; font-size: 11px; }
+.verb { font-family: var(--f-display); font-size: 20px; font-weight: 700; }
+
+.amount { display: flex; align-items: baseline; justify-content: center; gap: 6px; font-family: var(--f-num); }
+.amount .cur { font-size: 16px; font-weight: 800; color: var(--muted); }
+.amount b { font-size: 44px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.amount.zero b { color: var(--other-line); }
+
+.money { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.money button { min-height: 40px; font-family: var(--f-num); font-weight: 800; font-size: 15px; }
+.money .coin { border-radius: 999px; border: 2px solid var(--apricot); background: var(--cream); color: var(--ink); }
+.money .bill { border-radius: 6px; border: 2px solid var(--get-line); background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 2px var(--surface), inset 0 0 0 3px var(--line); }
+
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.keypad button {
+  min-height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2);
+  font-family: var(--f-num); font-size: 22px; font-weight: 800;
+}
+.keypad button:active { background: var(--line); }
+.keypad .fn { font-family: var(--f-body); font-size: 15px; font-weight: 700; color: var(--muted); }
+
+.note-row { display: flex; gap: 8px; }
+.field {
+  flex: 1; min-width: 0; min-height: 48px; padding: 0 12px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface-2); font-size: 16px;
+}
+.field::placeholder { color: var(--muted); opacity: .8; }
+.primary {
+  min-height: 48px; padding: 0 20px; border-radius: 12px; border: 0; background: var(--accent); color: var(--accent-ink);
+  font-weight: 700; font-size: 16px; white-space: nowrap;
+}
+.primary:disabled { opacity: .4; }
+.secondary {
+  min-height: 48px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2);
+  font-weight: 700; font-size: 15px; white-space: nowrap;
+}
+.secondary:disabled { opacity: .45; }
+.btn-row { display: flex; gap: 8px; }
+.btn-row > * { flex: 1; }
+
+/* pair panel */
+.pair-amt { text-align: center; }
+.pair-amt b { font-family: var(--f-num); font-weight: 800; font-size: 36px; font-variant-numeric: tabular-nums; color: var(--owe); }
+.mini-list { list-style: none; margin: 0; padding: 0; border-radius: 12px; background: var(--surface-2); }
+.mini-list li { display: flex; gap: 10px; align-items: baseline; padding: 9px 12px; font-size: 14px; }
+.mini-list li + li { border-top: 1px solid var(--line); }
+.mini-list .d { color: var(--muted); font-size: 12px; flex: none; width: 40px; font-family: var(--f-num); }
+.mini-list .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-list .a { font-family: var(--f-num); font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.mini-list .a small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* offset panel */
+.lede { margin: 0; color: var(--muted); font-size: 14px; }
+.cmp { display: grid; gap: 10px; }
+.cmp h3 { margin: 0 0 4px; font-size: 12px; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.flow li {
+  display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 10px; background: var(--surface-2);
+  font-size: 14px; min-width: 0;
+}
+.flow .nmx { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.flow .verb2 { color: var(--muted); flex: none; font-size: 13px; }
+.flow .a { margin-left: auto; font-family: var(--f-num); font-weight: 800; font-variant-numeric: tabular-nums; flex: none; }
+.flow .tag { flex: none; }
+.flow li.gone { opacity: .55; }
+.flow li.gone .a { text-decoration: line-through; }
+.saving { margin: 0; font-weight: 700; color: var(--ink); text-align: center; }
+.saving span { background: var(--cream); padding: 2px 10px; border-radius: 999px; }
+.nets { display: flex; flex-wrap: wrap; gap: 6px; }
+.nets span { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+
+/* history */
+.day { margin: 18px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.day:first-child { margin-top: 4px; }
+.rows { list-style: none; margin: 0; padding: 0; background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); }
+.row { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 12px; }
+.row + .row { border-top: 1px solid var(--line); }
+.row .main { min-width: 0; }
+.row .line { font-size: 15px; overflow-wrap: anywhere; }
+.row .meta { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.row .side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.row .amt { font-family: var(--f-num); font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+.row.voided .main, .row.voided .amt { opacity: .45; text-decoration: line-through; }
+.tag { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; border: 1px solid currentColor; white-space: nowrap; }
+.tag.debt { color: var(--owe); background: var(--cream); border-color: var(--owe-line); }
+.tag.repay { color: var(--get); } .tag.offset { color: var(--muted); } .tag.new { color: var(--owe); background: var(--cream); border-color: var(--owe-line); }
+.tag.base { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.mini-btn {
+  position: relative; min-height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--surface-2); font-size: 12px; font-weight: 700;
+}
+.mini-btn::before { content: ""; position: absolute; inset: -7px -4px; }
+.mini-btn:disabled { opacity: .45; }
+.empty-note { margin: 24px 0; text-align: center; color: var(--muted); text-wrap: balance; }
+.more { display: block; margin: 12px auto 0; }
+
+/* people */
+.section-title { margin: 18px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.section-title:first-child { margin-top: 4px; }
+.card { background: var(--surface); border-radius: var(--r); padding: 12px; box-shadow: var(--shadow); }
+.flat { padding: 0; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 3px 12px 3px 4px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); font-weight: 700; max-width: 100%; }
+.pick button span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick button[aria-pressed="true"] { border-color: var(--apricot); box-shadow: 0 0 0 2px var(--apricot); background: var(--cream); }
+.prow { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; }
+.prow + .prow { border-top: 1px solid var(--line); }
+.prow .field { width: 100%; min-height: 40px; font-weight: 700; }
+.prow .sub { font-size: 12px; color: var(--muted); margin-top: 3px; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
+.prow .sub button { border: 0; background: none; padding: 0; color: var(--owe); font-weight: 700; font-size: 12px; text-decoration: underline; }
+.av-btn { position: relative; width: 48px; height: 48px; padding: 0; border: 0; background: none; border-radius: 50%; flex: none; }
+.av-btn .av { --d: 48px; box-shadow: none; font-size: 15px; }
+.av-btn .cam {
+  position: absolute; right: -3px; bottom: -3px; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line);
+}
+.av-btn .cam svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.av-btn.busy .av { opacity: .45; }
+.av-btn:disabled { cursor: default; }
+.title-row, .add-row { display: flex; gap: 8px; }
+.link-btn { display: inline-flex; align-items: center; min-height: 40px; text-decoration: none; color: var(--ink); }
+.add-row { margin-top: 10px; }
+.steps { margin: 6px 0 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.steps b { color: var(--owe); }
+
+/* full-screen flows */
+.overlay {
+  position: fixed; inset: 0; z-index: 30; background: var(--bg); overflow-y: auto;
+  display: flex; align-items: center; justify-content: center;
+  padding-top: calc(24px + env(safe-area-inset-top, 0px)); padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.panel { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; margin: auto 0; }
+.panel h2 { margin: 0; font-family: var(--f-display); font-size: 28px; text-wrap: balance; }
+.panel p { margin: 0; color: var(--muted); }
+.panel label { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.ob-list { display: flex; flex-direction: column; gap: 8px; }
+.ob-item { display: flex; gap: 8px; align-items: center; }
+.ob-item .mini-av { width: 36px; height: 36px; font-size: 13px; }
+.big-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.big-pick button {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 8px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--surface); font-weight: 700; min-width: 0;
+}
+.big-pick .av { --d: 56px; }
+.big-pick span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.toast {
+  position: fixed; left: 50%; top: calc(8px + env(safe-area-inset-top, 0px)); z-index: 40;
+  transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border-radius: 12px;
+  background: var(--ink); color: var(--bg); box-shadow: var(--shadow); font-size: 14px;
+}
+.toast button { min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--toast-act); font-weight: 700; }
+.toast button:empty { display: none; }
+
+@media (min-width: 640px) {
+  .cmp { grid-template-columns: 1fr 1fr; }
+}
+@media (max-height: 620px) {
+  .sheet { gap: 8px; }
+  .keypad button { min-height: 42px; }
+  .amount b { font-size: 38px; }
+  .money button { min-height: 38px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top gutter">
+    <h1 id="appTitle">飯友帳本</h1>
+    <span id="sync" class="sync" data-s="loading" role="status">連線中…</span>
+    <button id="meBtn" class="me-btn" type="button" hidden></button>
+  </header>
+  <div class="gutter"><div id="banner" class="banner" hidden></div></div>
+
+  <main>
+    <section id="view-graph" class="view" aria-label="關係圖">
+      <div id="summary" class="summary gutter"></div>
+      <div class="stage-wrap gutter">
+        <div id="stage" class="stage">
+          <svg id="links" aria-hidden="true">
+            <g id="edgeG"></g>
+            <g id="coin" hidden>
+              <g id="trail"></g>
+              <circle id="ball" r="14"></circle>
+              <text id="ballText">$</text>
+            </g>
+          </svg>
+          <div id="labels"></div>
+          <div id="nodes"></div>
+          <div id="stageEmpty" class="stage-empty" hidden></div>
+          <div id="hint" class="hint" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="offset-row gutter">
+        <button id="offsetBtn" class="offset-btn" type="button" disabled>抵銷債務</button>
+      </div>
+    </section>
+
+    <section id="view-log" class="view scroll gutter" aria-label="紀錄" hidden></section>
+    <section id="view-people" class="view scroll gutter" aria-label="成員" hidden></section>
+  </main>
+
+  <nav class="tabs gutter" aria-label="分頁">
+    <button type="button" data-tab="graph" aria-current="page">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.6"></circle><circle cx="5" cy="18" r="2.6"></circle><circle cx="19" cy="18" r="2.6"></circle><path d="M10.7 7.3 6.3 15.7M13.3 7.3l4.4 8.4M7.6 18h8.8"></path></svg>
+      關係圖
+    </button>
+    <button type="button" data-tab="log">
+      <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"></path><circle cx="4.5" cy="6" r="1.2"></circle><circle cx="4.5" cy="12" r="1.2"></circle><circle cx="4.5" cy="18" r="1.2"></circle></svg>
+      紀錄
+    </button>
+    <button type="button" data-tab="people">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17" cy="9" r="2.6"></circle><path d="M16.2 14.2c2.8.4 4.8 2.8 4.8 5.8"></path></svg>
+      成員
+    </button>
+  </nav>
+</div>
+
+<div id="scrim" class="scrim" hidden></div>
+<input type="file" id="photoInput" class="sr-only" accept="image/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="importInput" class="sr-only" accept="application/json,.json" tabindex="-1" aria-hidden="true">
+
+<!-- 記一筆 -->
+<section id="entrySheet" class="sheet" role="dialog" aria-modal="true" aria-label="記一筆" tabindex="-1" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <div class="seg" role="group" aria-label="類型">
+      <button type="button" id="kindAdvance" aria-pressed="true">代墊</button>
+      <button type="button" id="kindRepay" aria-pressed="false">還款</button>
+    </div>
+    <button type="button" class="icon-btn" data-close aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+  </div>
+  <div class="who">
+    <span id="giverChip" class="pchip"></span>
+    <span id="verb" class="verb">幫</span>
+    <span id="receiverChip" class="pchip"></span>
+    <span id="verbTail" class="verb">代墊</span>
+    <button type="button" id="swapBtn" class="icon-btn" aria-label="對調方向"><svg viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"></path></svg></button>
+  </div>
+  <div id="amountOut" class="amount zero" aria-live="polite"><span class="cur">NT$</span><b>0</b></div>
+  <div class="money" aria-label="快速加金額">
+    <button type="button" class="coin" data-add="10">+10</button>
+    <button type="button" class="coin" data-add="50">+50</button>
+    <button type="button" class="bill" data-add="100">+100</button>
+    <button type="button" class="bill" data-add="500">+500</button>
+  </div>
+  <div class="keypad" aria-label="數字鍵盤">
+    <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+    <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+    <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+    <button type="button" data-k="C" class="fn">清除</button><button type="button" data-k="0">0</button><button type="button" data-k="B" class="fn" aria-label="刪一位">⌫</button>
+  </div>
+  <div class="note-row">
+    <input id="noteInput" class="field" maxlength="30" placeholder="備註：吃飯" aria-label="備註" autocomplete="off">
+    <button type="button" id="saveEntry" class="primary" disabled>記下來</button>
+  </div>
+</section>
+
+<!-- 兩人之間 -->
+<section id="pairSheet" class="sheet" role="dialog" aria-modal="true" aria-label="兩人之間的帳" tabindex="-1" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <h2 id="pairTitle"></h2>
+    <button type="button" class="icon-btn" data-close aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+  </div>
+  <div id="pairAmt" class="pair-amt"></div>
+  <ul id="pairList" class="mini-list" aria-label="還沒還的項目"></ul>
+  <div class="btn-row">
+    <button type="button" id="pairPartial" class="secondary">還一部分</button>
+    <button type="button" id="pairSettle" class="primary">全部還清</button>
+  </div>
+  <button type="button" id="pairMore" class="secondary">再記一筆代墊</button>
+</section>
+
+<!-- 抵銷 -->
+<section id="offsetSheet" class="sheet" role="dialog" aria-modal="true" aria-label="抵銷債務" tabindex="-1" hidden>
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <h2>抵銷債務</h2>
+    <button type="button" class="icon-btn" data-close aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+  </div>
+  <p class="lede">每個人最後要付、要收的總額都不變，只是改成比較少的轉帳。3 天內可以在「紀錄」撤銷，3 天後之前的紀錄會整理成一筆結算。</p>
+  <div class="cmp">
+    <div><h3 id="beforeTitle"></h3><ul id="beforeList" class="flow"></ul></div>
+    <div><h3 id="afterTitle"></h3><ul id="afterList" class="flow"></ul></div>
+  </div>
+  <p class="saving"><span id="savingLine"></span></p>
+  <div id="netLine" class="nets"></div>
+  <div class="btn-row">
+    <button type="button" class="secondary" data-close>先不要</button>
+    <button type="button" id="confirmOffset" class="primary">確認抵銷</button>
+  </div>
+</section>
+
+<!-- 第一次使用 -->
+<div id="onboard" class="overlay" hidden>
+  <form id="obForm" class="panel" autocomplete="off">
+    <h2>建立你們的帳本</h2>
+    <label for="obTitle">帳本名稱</label>
+    <input id="obTitle" class="field" maxlength="16" placeholder="飯友帳本">
+    <label>誰會一起吃飯？</label>
+    <div id="obList" class="ob-list"></div>
+    <button type="button" id="obAdd" class="secondary">再加一位</button>
+    <button type="submit" id="obGo" class="primary">開始記帳</button>
+    <p class="small">之後可以在「成員」頁改名稱、加人、換頭貼。</p>
+    <p id="obMsg" class="small" hidden></p>
+  </form>
+</div>
+
+<!-- 你是誰 -->
+<div id="picker" class="overlay" hidden>
+  <div class="panel">
+    <h2>你是哪一位？</h2>
+    <p>只會記在這支手機上，用來顯示「你要付、你要收」。之後可以在「成員」頁更改。</p>
+    <div id="pickList" class="big-pick"></div>
+    <button type="button" id="pickLater" class="secondary">先不選，只看帳</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" hidden><span id="toastText"></span><button type="button" id="toastBtn"></button></div>
+
+<script src="ledger.js"></script>
+<script src="store.js"></script>
+<script>
+(() => {
+  "use strict";
+  const L = window.Ledger;
+  const $ = (sel) => document.querySelector(sel);
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const MAX_MEMBERS = 8;
+  const ME_KEY = "fanyou.me";
+  const DEFAULT_TITLE = "飯友帳本";
+  const READONLY_MSG = "你目前只能查看。請擁有者在分享設定把你設為「編輯者」。";
+  const motionOK = !window.matchMedia || !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- small helpers ----------
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    if (props) for (const k in props) {
+      const v = props[k];
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k === "style") el.setAttribute("style", v);
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) el.append(c.nodeType ? c : String(c));
+    return el;
+  }
+  function svg(tag, attrs) {
+    const el = document.createElementNS(SVGNS, tag);
+    for (const k in attrs || {}) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  const local = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} },
+  };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const money = (n) => "$" + Math.abs(n).toLocaleString("en-US");
+  function shortName(name) {
+    const chars = Array.from((name || "?").trim() || "?");
+    const cjk = /[㐀-鿿豈-﫿]/.test(chars.join(""));
+    if (chars.length <= 2 || (!cjk && chars.length <= 3)) return chars.join("");
+    return cjk ? chars.slice(-2).join("") : chars.slice(0, 2).join("").toUpperCase();
+  }
+  const colorVar = (m) => "var(--m" + (((m && m.color) | 0) % 8) + ")";
+  function nameOf(id) { const m = memberById(id); return (m && m.name) || "（已刪除）"; }
+  function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms || 12); } catch (e) {} }
+
+  // 頭像：有頭貼就放照片，載入失敗或沒有就顯示名字縮寫
+  const badPhotos = new Set();
+  function photoId(m) {
+    const p = m && m.photo;
+    return typeof p === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(p) && !badPhotos.has(p) ? p : null;
+  }
+  function fillAvatar(el, m) {
+    el.style.setProperty("--c", colorVar(m));
+    const pid = photoId(m);
+    const label = shortName(m ? m.name : "?");
+    const key = (pid || "") + "|" + label;
+    if (el.dataset.k === key) return;
+    el.dataset.k = key;
+    el.replaceChildren();
+    if (pid) {
+      const src = state.localMode ? window.EatStore.local.blobUrl(pid) : "/_blob/" + pid;
+      if (!src) { badPhotos.add(pid); el.textContent = label; return; }
+      const img = h("img", { src, alt: "", draggable: "false" });
+      img.addEventListener("error", () => { badPhotos.add(pid); scheduleRender(); });
+      el.append(img);
+    } else el.textContent = label;
+  }
+  function miniAv(id, extraClass) {
+    const el = h("span", { class: "mini-av" + (extraClass ? " " + extraClass : ""), "aria-hidden": "true" });
+    fillAvatar(el, memberById(id));
+    return el;
+  }
+
+  // ---------- state ----------
+  const state = {
+    db: null, user: null, assets: null,
+    members: [], entries: [], title: "",
+    me: local.get(ME_KEY),
+    membersReady: false, entriesReady: false,
+    confirmed: false, stale: false, pending: false, fromCache: false, error: false, nodb: false,
+    readOnly: false, isOwner: false, localMode: false,
+    tab: "graph", selected: null, logLimit: 80,
+    skippedPicker: false, uploading: new Set(),
+  };
+  let derived = { edges: [], bal: {}, plan: null, byId: new Map(), live: [] };
+  function memberById(id) { return derived.byId.get(id) || null; }
+  function activeMembers() { return state.members.filter((m) => !m.archived); }
+  const displayTitle = () => (state.title || "").trim() || DEFAULT_TITLE;
+
+  function derive() {
+    const byId = new Map(state.members.map((m) => [m.id, m]));
+    const edges = L.pairwise(state.entries);
+    derived = { byId, edges, bal: L.balances(edges), plan: L.plan(state.entries), live: L.live(state.entries) };
+  }
+
+  // ---------- rendering ----------
+  let renderQueued = false;
+  function scheduleRender() {
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(() => { renderQueued = false; renderAll(); });
+  }
+
+  function renderAll() {
+    derive();
+    renderStatus();
+    renderHeader();
+    renderSummary();
+    if (state.tab === "graph") renderStage();
+    renderOffsetBtn();
+    if (state.tab === "log") renderLog();
+    if (state.tab === "people") renderPeople();
+    renderOverlays();
+    if (openSheet === "pair") renderPair();
+    if (openSheet === "entry") renderEntry();
+    maybeCompact();
+  }
+
+  function renderStatus() {
+    const el = $("#sync");
+    let s = "loading", t = "連線中…";
+    if (state.nodb) { s = "nodb"; t = "未連線"; }
+    else if (state.error) { s = "error"; t = "連線中斷"; }
+    else if (!state.confirmed) { if (state.stale) { s = "stale"; t = "連不上"; } }
+    else if (state.pending) { s = "saving"; t = "儲存中…"; }
+    else if (state.fromCache) { s = "syncing"; t = "同步中…"; }
+    else if (state.localMode) { s = "synced"; t = "本機模式"; }
+    else { s = "synced"; t = state.readOnly ? "唯讀" : "已同步"; }
+    el.dataset.s = s;
+    el.textContent = t;
+
+    const banner = $("#banner");
+    banner.replaceChildren();
+    let msg = null, action = null;
+    if (state.error) { msg = "和共享帳本的連線中斷了。"; action = ["重新連線", resubscribe]; }
+    else if (!state.confirmed && state.stale) msg = "連不上共享帳本，畫面上的資料可能不是最新的。";
+    else if (state.readOnly) msg = READONLY_MSG;
+    if (msg) {
+      banner.append(msg);
+      if (action) banner.append(h("button", { type: "button", onclick: action[1], text: action[0] }));
+    }
+    banner.hidden = !msg;
+  }
+
+  function renderHeader() {
+    const t = displayTitle();
+    $("#appTitle").textContent = t;
+    if (document.title !== t) document.title = t;
+    const btn = $("#meBtn");
+    const m = memberById(state.me);
+    btn.hidden = !state.membersReady || activeMembers().length === 0;
+    btn.replaceChildren();
+    if (m) btn.append(miniAv(m.id), h("span", { text: "我是 " + m.name }));
+    else btn.append(h("span", { text: "選擇我是誰" }));
+  }
+
+  function renderSummary() {
+    const box = $("#summary");
+    box.replaceChildren();
+    const me = memberById(state.me);
+    if (state.nodb) {
+      box.append(h("div", { class: "stat whole" }, h("div", { class: "k", text: "沒有連上共享帳本" }), h("div", { class: "v muted", text: "—" })));
+      return;
+    }
+    if (!state.confirmed && !state.membersReady) {
+      box.append(h("div", { class: "stat whole" }, h("div", { class: "k", text: "讀取帳本中" }), h("div", { class: "v muted", text: "…" })));
+      return;
+    }
+    if (me) {
+      let owe = 0, get = 0;
+      for (const e of derived.edges) { if (e.from === me.id) owe += e.amount; if (e.to === me.id) get += e.amount; }
+      box.append(
+        h("div", { class: "stat owe" }, h("div", { class: "k", text: "我要付" }), h("div", { class: "v", text: money(owe) })),
+        h("div", { class: "stat get" }, h("div", { class: "k", text: "我要收" }), h("div", { class: "v", text: money(get) }))
+      );
+    } else {
+      const total = L.totalFlow(derived.edges);
+      box.append(h("div", { class: "stat whole" },
+        h("div", { class: "k", text: derived.edges.length ? `目前 ${derived.edges.length} 筆欠款` : "目前沒有欠款" }),
+        h("div", { class: "v", text: money(total) })));
+    }
+  }
+
+  // stage --------------------------------------------------------
+  const nodeEls = new Map();
+  const edgeEls = new Map();
+  const labelEls = new Map();
+  let lay = { pos: {}, D: 68, R: 34 };
+
+  function stageMembers() {
+    const involved = new Set();
+    for (const e of derived.edges) { involved.add(e.from); involved.add(e.to); }
+    let list = state.members.filter((m) => !m.archived || involved.has(m.id));
+    const i = list.findIndex((m) => m.id === state.me);
+    if (i > 0) list = list.slice(i).concat(list.slice(0, i));
+    return list;
+  }
+
+  function computeLayout(list, w, hgt) {
+    const n = list.length;
+    const D = n <= 4 ? 68 : n <= 6 ? 58 : 50;
+    const R = D / 2;
+    const LABEL_H = 42, HALF_W = 52, PAD = 10, TOP = 44;
+    const pos = {};
+    if (n === 1) { pos[list[0].id] = { x: w / 2, y: (hgt + TOP - LABEL_H) / 2 }; return { pos, D, R }; }
+    const unit = list.map((m, i) => {
+      const a = Math.PI / 2 + (i * 2 * Math.PI) / n;
+      return { id: m.id, x: Math.cos(a), y: Math.sin(a) };
+    });
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const u of unit) { minX = Math.min(minX, u.x); maxX = Math.max(maxX, u.x); minY = Math.min(minY, u.y); maxY = Math.max(maxY, u.y); }
+    const spanX = maxX - minX, spanY = maxY - minY;
+    const availX = w - 2 * Math.max(HALF_W, R) - 2 * PAD;
+    const availY = hgt - TOP - PAD - D - LABEL_H;
+    const r = Math.max(36, Math.min(spanX > 1e-6 ? availX / spanX : 1e9, spanY > 1e-6 ? availY / spanY : 1e9, 170));
+    const ox = w / 2 - ((minX + maxX) / 2) * r;
+    const oy = TOP + R + Math.max(0, (availY - spanY * r) / 2) - minY * r;
+    for (const u of unit) pos[u.id] = { x: ox + u.x * r, y: oy + u.y * r };
+    return { pos, D, R };
+  }
+
+  function renderStage() {
+    const stage = $("#stage");
+    const w = stage.clientWidth, hgt = stage.clientHeight;
+    const list = stageMembers();
+    const empty = $("#stageEmpty");
+
+    empty.replaceChildren();
+    if (state.nodb) {
+      empty.append(h("b", { text: "無法開啟共享帳本" }),
+        h("span", { text: "請用 claude.ai 開啟這個頁面並登入。如果是朋友分享給你的，請對方在分享設定把你加為「編輯者」。" }));
+    } else if (!state.membersReady) {
+      empty.append(h("span", { text: "讀取帳本中…" }));
+    } else if (list.length === 0) {
+      empty.append(h("b", { text: "還沒有成員" }), h("span", { text: state.readOnly ? "請擁有者先打開帳本設定成員。" : "先輸入一起吃飯的人。" }));
+    }
+    empty.hidden = !empty.childNodes.length;
+
+    if (!fx) lay = computeLayout(list, w, hgt); // 拖曳動畫進行中不要移動位置
+    const me = state.me;
+
+    const seen = new Set();
+    for (const m of list) {
+      seen.add(m.id);
+      let el = nodeEls.get(m.id);
+      if (!el) {
+        el = h("button", { type: "button", class: "node", "data-id": m.id },
+          h("span", { class: "av" }), h("span", { class: "nm" }), h("span", { class: "nb" }));
+        el.addEventListener("pointerdown", onNodeDown);
+        el.addEventListener("pointermove", onNodeMove);
+        el.addEventListener("pointerup", onNodeUp);
+        el.addEventListener("pointercancel", onNodeCancel);
+        el.addEventListener("click", (ev) => { if (ev.detail === 0) onNodeTap(m.id); });
+        el.addEventListener("contextmenu", (ev) => ev.preventDefault());
+        $("#nodes").append(el);
+        nodeEls.set(m.id, el);
+      }
+      const p = lay.pos[m.id];
+      if (!p) continue;
+      el.style.transform = `translate(${p.x - 52}px, ${p.y - lay.R}px)`;
+      const av = el.children[0];
+      av.style.setProperty("--d", lay.D + "px");
+      fillAvatar(av, m);
+      el.children[1].textContent = m.id === me ? m.name + "（我）" : m.name;
+      const b = derived.bal[m.id] || 0;
+      const nb = el.children[2];
+      nb.className = "nb" + (b > 0 ? " pos" : b < 0 ? " neg" : "");
+      nb.textContent = b > 0 ? "應收 " + money(b) : b < 0 ? "應付 " + money(b) : "結清";
+      el.classList.toggle("me", m.id === me);
+      el.classList.toggle("selected", state.selected === m.id);
+      el.setAttribute("aria-label", `${m.name}，${nb.textContent}。拖到另一個人身上，記錄幫他代墊。`);
+    }
+    for (const [id, el] of nodeEls) if (!seen.has(id)) { el.remove(); nodeEls.delete(id); }
+
+    renderEdges();
+    renderHint();
+  }
+
+  // 我是代墊的人＝要收；我是被代墊的人＝要付
+  function edgeClass(e) { return e.to === state.me ? "e-get" : e.from === state.me ? "e-owe" : "e-other"; }
+
+  function renderEdges() {
+    const g = $("#edgeG");
+    const seen = new Set();
+    const maxAmt = Math.max(1, ...derived.edges.map((e) => e.amount));
+    const segs = [];
+    for (const e of derived.edges) {
+      // 箭頭＝誰要給誰錢：從欠錢的人（e.from）指向收錢的人（e.to）
+      const a = lay.pos[e.from], b = lay.pos[e.to];
+      if (!a || !b) continue;
+      const key = e.from + ">" + e.to;
+      seen.add(key);
+      const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      const sw = 2.5 + 5 * Math.sqrt(e.amount / maxAmt);
+      const headL = 9 + sw * 1.3, half = 5 + sw * 0.9;
+      const x1 = a.x + ux * (lay.R + 6), y1 = a.y + uy * (lay.R + 6);
+      const tx = b.x - ux * (lay.R + 7), ty = b.y - uy * (lay.R + 7);
+      const x2 = tx - ux * headL * 0.7, y2 = ty - uy * headL * 0.7;
+      const bx = tx - ux * headL, by = ty - uy * headL;
+      const cls = edgeClass(e);
+
+      let rec = edgeEls.get(key);
+      const fresh = !rec;
+      if (!rec) {
+        const grp = svg("g");
+        const line = svg("line");
+        const head = svg("path");
+        grp.append(line, head);
+        g.append(grp);
+        rec = { grp, line, head };
+        edgeEls.set(key, rec);
+      }
+      rec.grp.setAttribute("class", "edge " + cls);
+      rec.line.setAttribute("x1", x1); rec.line.setAttribute("y1", y1);
+      rec.line.setAttribute("x2", x2); rec.line.setAttribute("y2", y2);
+      rec.line.style.strokeWidth = sw;
+      rec.head.setAttribute("d", `M${tx},${ty} L${bx - uy * half},${by + ux * half} L${bx + uy * half},${by - ux * half} Z`);
+      if (fresh && motionOK && rec.line.animate) {
+        const l = Math.hypot(x2 - x1, y2 - y1);
+        rec.line.style.strokeDasharray = l;
+        const anim = rec.line.animate([{ strokeDashoffset: l }, { strokeDashoffset: 0 }], { duration: 420, easing: "cubic-bezier(.2,.8,.2,1)" });
+        anim.onfinish = () => { rec.line.style.strokeDasharray = ""; };
+        rec.head.animate([{ opacity: 0 }, { opacity: 0, offset: 0.7 }, { opacity: 1 }], { duration: 420 });
+      }
+
+      let lab = labelEls.get(key);
+      const prevText = lab && lab.textContent;
+      if (!lab) {
+        lab = h("button", { type: "button", class: "elabel" });
+        lab.addEventListener("click", () => openPair(e.from, e.to));
+        $("#labels").append(lab);
+        labelEls.set(key, lab);
+        if (motionOK && lab.animate) lab.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 200, fill: "backwards" });
+      }
+      lab.className = "elabel " + cls;
+      lab.textContent = money(e.amount);
+      lab.setAttribute("aria-label", `${nameOf(e.from)} 要給 ${nameOf(e.to)} ${e.amount} 元，查看明細`);
+      if (prevText && prevText !== lab.textContent && motionOK && lab.animate) {
+        lab.animate([{ scale: 1 }, { scale: 1.18 }, { scale: 1 }], { duration: 380 });
+      }
+      segs.push({ key, lab, x1, y1, x2: tx, y2: ty, t: 0.5, w: lab.offsetWidth, h: lab.offsetHeight });
+    }
+    for (const [key, rec] of edgeEls) if (!seen.has(key)) {
+      edgeEls.delete(key);
+      if (motionOK && rec.grp.animate) rec.grp.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 320 }).onfinish = () => rec.grp.remove();
+      else rec.grp.remove();
+    }
+    for (const [key, lab] of labelEls) if (!seen.has(key)) {
+      labelEls.delete(key);
+      if (motionOK && lab.animate) lab.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.6 }], { duration: 300 }).onfinish = () => lab.remove();
+      else lab.remove();
+    }
+    placeLabels(segs);
+  }
+
+  // 標籤放在線段上；互相重疊時沿著各自的線推開
+  function placeLabels(segs) {
+    const at = (s) => ({ x: s.x1 + (s.x2 - s.x1) * s.t, y: s.y1 + (s.y2 - s.y1) * s.t });
+    const overlap = (a, b) => {
+      const pa = at(a), pb = at(b);
+      return Math.abs(pa.x - pb.x) < (a.w + b.w) / 2 + 4 && Math.abs(pa.y - pb.y) < (a.h + b.h) / 2 + 4;
+    };
+    for (let iter = 0; iter < 40; iter++) {
+      let moved = false;
+      for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
+        const a = segs[i], b = segs[j];
+        if (!overlap(a, b)) continue;
+        moved = true;
+        const pa = at(a), pb = at(b);
+        for (const [s, other] of [[a, pb], [b, pa]]) {
+          const p = at(s);
+          const dirx = s.x2 - s.x1, diry = s.y2 - s.y1;
+          const away = (p.x - other.x) * dirx + (p.y - other.y) * diry;
+          s.t = clamp(s.t + (away >= 0 ? 0.03 : -0.03), 0.26, 0.74);
+        }
+      }
+      if (!moved) break;
+    }
+    for (const s of segs) {
+      const p = at(s);
+      s.lab.style.transform = `translate(${p.x - s.w / 2}px, ${p.y - s.h / 2}px)`;
+    }
+  }
+
+  function renderHint(text, strong) {
+    const el = $("#hint");
+    if (text === undefined) {
+      const n = stageMembers().length;
+      if (state.nodb || !state.membersReady || n < 2) { el.hidden = true; return; }
+      if (state.readOnly) text = "唯讀模式：只能查看";
+      else if (state.selected) text = `${nameOf(state.selected)} 幫誰代墊？點那個人`;
+      else text = "從代墊的人拖到被代墊的人";
+    }
+    el.hidden = false;
+    el.textContent = text;
+    el.classList.toggle("strong", !!strong || !!state.selected);
+  }
+
+  function renderOffsetBtn() {
+    const btn = $("#offsetBtn");
+    const p = derived.plan;
+    btn.replaceChildren();
+    if (p && p.useful) {
+      btn.disabled = state.readOnly;
+      btn.append("抵銷債務", h("small", { text: p.savedCount > 0 ? `可少轉 ${p.savedCount} 筆` : `少流動 ${money(p.savedFlow)}` }));
+    } else {
+      btn.disabled = true;
+      btn.append(derived.edges.length ? "已經是最少的轉帳了" : "目前沒有欠款");
+    }
+  }
+
+  // ---------- 硬幣拋物線拖曳 ----------
+  // 從代墊的人身上拉出一枚硬幣跟著手指走（後面拖著殘影）；放開後硬幣沿弧線飛進對方頭像。
+  // 頭像本身和外框都不變形。
+  let drag = null;   // 手指狀態
+  let fx = null;     // 動畫狀態 {src, ball:{x,y,vx,vy}, mode, target, trail, flight, onDone}
+  let rafId = 0;
+  const TRAIL = 5;
+
+  function hitNode(x, y, except) {
+    let best = null, bestD = Infinity;
+    for (const id in lay.pos) {
+      if (id === except) continue;
+      const p = lay.pos[id];
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < lay.R + 24 && d < bestD) { best = id; bestD = d; }
+    }
+    return best;
+  }
+
+  function avOf(id) { const el = nodeEls.get(id); return el && el.children[0]; }
+
+  function startFx(srcId, x, y) {
+    const src = lay.pos[srcId];
+    const r = Math.round(lay.R * 0.42);
+    const ball = $("#ball");
+    ball.setAttribute("r", r);
+    $("#ballText").style.fontSize = Math.round(r * 1.15) + "px";
+    const trail = $("#trail");
+    trail.replaceChildren();
+    for (let i = 0; i < TRAIL; i++) trail.append(svg("circle", { class: "trail-dot", r: Math.max(2, r * (0.75 - i * 0.12)) }));
+    const start = src ? { x: src.x, y: src.y } : { x, y };
+    fx = { src: srcId, r, ball: { x: start.x, y: start.y, vx: 0, vy: 0 }, mode: "drag", target: null, last: 0, hist: [], flight: null, onDone: null };
+    $("#coin").removeAttribute("hidden"); // SVG 元素沒有 .hidden 屬性，要直接改 attribute
+    if (!rafId) rafId = requestAnimationFrame(tick);
+  }
+
+  function bounce(id) {
+    const av = avOf(id);
+    if (!av || !motionOK || !av.animate) return;
+    av.animate([{ transform: "scale(1)" }, { transform: "scale(1.08)" }, { transform: "scale(.98)" }, { transform: "scale(1)" }],
+      { duration: 360, easing: "ease-out" });
+  }
+
+  function step(b, tx, ty, k, c, dt) {
+    const ax = k * (tx - b.x) - c * b.vx;
+    const ay = k * (ty - b.y) - c * b.vy;
+    b.vx += ax * dt; b.vy += ay * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+  }
+
+  const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+  // 從目前位置沿二次貝茲弧線飛到 to；弧頂往上抬約距離的 25%
+  function launch(to, ms, fade, onDone) {
+    const b = fx.ball;
+    const from = { x: b.x, y: b.y };
+    const dist = Math.hypot(to.x - from.x, to.y - from.y);
+    const ctrl = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - Math.max(30, dist * 0.25) };
+    fx.flight = { from, to, ctrl, t0: 0, ms: Math.max(220, Math.min(ms, 260 + dist * 0.6)), fade, onDone };
+  }
+
+  function tick(ts) {
+    rafId = 0;
+    if (!fx) return;
+    const dt = Math.min(1 / 30, fx.last ? (ts - fx.last) / 1000 : 1 / 60);
+    fx.last = ts;
+    const b = fx.ball;
+    let scale = 1, opacity = 1;
+
+    if (fx.mode === "drag") {
+      let tx = drag ? drag.fx : b.x, ty = drag ? drag.fy : b.y;
+      if (fx.target && lay.pos[fx.target]) {
+        const t = lay.pos[fx.target];
+        tx += (t.x - tx) * 0.3; ty += (t.y - ty) * 0.3;   // 輕微磁吸
+      }
+      step(b, tx, ty, 520, 34, dt);
+    } else {
+      if (!fx.flight) {
+        if (fx.mode === "toTarget" && lay.pos[fx.target]) {
+          const tgt = fx.target, done = fx.onDone;
+          launch(lay.pos[tgt], 380, false, () => { bounce(tgt); vibrate(18); if (done) setTimeout(done, motionOK ? 140 : 0); });
+        } else {
+          const src = lay.pos[fx.src];
+          if (!src) { stopFx(); return; }
+          launch(src, 340, true, null);
+        }
+      }
+      const f = fx.flight;
+      if (!f.t0) f.t0 = ts;
+      const t = Math.min(1, (ts - f.t0) / f.ms), e = easeInOut(t), u = 1 - e;
+      b.x = u * u * f.from.x + 2 * u * e * f.ctrl.x + e * e * f.to.x;
+      b.y = u * u * f.from.y + 2 * u * e * f.ctrl.y + e * e * f.to.y;
+      scale = 1 - 0.3 * e;
+      if (f.fade) opacity = 1 - e * 0.9;
+      if (t >= 1) { const done = f.onDone; stopFx(); if (done) done(); return; }
+    }
+
+    fx.hist.unshift({ x: b.x, y: b.y });
+    if (fx.hist.length > TRAIL * 2 + 1) fx.hist.length = TRAIL * 2 + 1;
+    drawFx(scale, opacity);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function drawFx(scale, opacity) {
+    if (!fx) return;
+    const b = fx.ball;
+    const ball = $("#ball");
+    ball.setAttribute("cx", b.x.toFixed(1));
+    ball.setAttribute("cy", b.y.toFixed(1));
+    ball.setAttribute("r", (fx.r * scale).toFixed(1));
+    $("#ballText").setAttribute("x", b.x.toFixed(1));
+    $("#ballText").setAttribute("y", b.y.toFixed(1));
+    $("#ballText").style.fontSize = Math.round(fx.r * 1.15 * scale) + "px";
+    $("#coin").style.opacity = opacity;
+    const dots = $("#trail").children;
+    for (let i = 0; i < dots.length; i++) {
+      const p = fx.hist[(i + 1) * 2] || fx.hist[fx.hist.length - 1] || b;
+      dots[i].setAttribute("cx", p.x.toFixed(1));
+      dots[i].setAttribute("cy", p.y.toFixed(1));
+      const far = Math.hypot(p.x - b.x, p.y - b.y);
+      dots[i].style.opacity = far < 2 ? 0 : (0.45 - i * 0.08) * opacity;
+    }
+  }
+
+  function stopFx() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    fx = null;
+    $("#coin").setAttribute("hidden", "");
+    $("#coin").style.opacity = "";
+  }
+
+  function onNodeDown(ev) {
+    if (ev.pointerType === "mouse" && ev.button !== 0) return;
+    if (fx) stopFx();
+    const id = ev.currentTarget.dataset.id;
+    const rect = $("#stage").getBoundingClientRect();
+    drag = { id, pid: ev.pointerId, x0: ev.clientX, y0: ev.clientY, rect, moved: false, target: null, fx: 0, fy: 0 };
+    try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+  }
+  function onNodeMove(ev) {
+    if (!drag || ev.pointerId !== drag.pid) return;
+    if (state.readOnly) return;
+    const dx = ev.clientX - drag.x0, dy = ev.clientY - drag.y0;
+    const x = ev.clientX - drag.rect.left, y = ev.clientY - drag.rect.top;
+    drag.fx = x; drag.fy = y;
+    if (!drag.moved) {
+      if (Math.hypot(dx, dy) < 8) return;
+      drag.moved = true;
+      state.selected = null;
+      $("#stage").classList.add("dragging");
+      nodeEls.forEach((el) => el.classList.remove("selected"));
+      if (motionOK) startFx(drag.id, x, y);
+    }
+    const t = hitNode(x, y, drag.id);
+    if (t !== drag.target) {
+      if (drag.target && nodeEls.get(drag.target)) nodeEls.get(drag.target).classList.remove("target");
+      if (t && nodeEls.get(t)) { nodeEls.get(t).classList.add("target"); vibrate(6); }
+      drag.target = t;
+      if (fx) fx.target = t;
+    }
+    if (fx && !rafId) rafId = requestAnimationFrame(tick);
+    renderHint(t ? `放開：${nameOf(drag.id)} 幫 ${nameOf(t)} 代墊` : `${nameOf(drag.id)} 幫誰代墊？拖到那個人身上`, !!t);
+  }
+  function endDrag() {
+    $("#stage").classList.remove("dragging");
+    nodeEls.forEach((el) => el.classList.remove("target"));
+  }
+  function onNodeUp(ev) {
+    if (!drag || ev.pointerId !== drag.pid) return;
+    const d = drag;
+    drag = null;
+    endDrag();
+    if (!d.moved) { onNodeTap(d.id); return; }
+    renderHint();
+    const open = () => openEntry({ kind: "advance", giver: d.id, receiver: d.target });
+    if (!fx) { if (d.target) { vibrate(18); open(); } return; }
+    if (d.target) { fx.mode = "toTarget"; fx.target = d.target; fx.onDone = open; }
+    else { fx.mode = "return"; }
+    if (!rafId) rafId = requestAnimationFrame(tick);
+  }
+  function onNodeCancel() {
+    drag = null;
+    endDrag();
+    if (fx) { fx.mode = "return"; if (!rafId) rafId = requestAnimationFrame(tick); }
+    renderHint();
+  }
+
+  function onNodeTap(id) {
+    if (state.readOnly) { toast(READONLY_MSG); return; }
+    if (!state.selected) state.selected = id;
+    else if (state.selected === id) state.selected = null;
+    else { const giver = state.selected; state.selected = null; openEntry({ kind: "advance", giver, receiver: id }); }
+    nodeEls.forEach((el, nid) => el.classList.toggle("selected", nid === state.selected));
+    renderHint();
+  }
+  $("#stage").addEventListener("pointerdown", (ev) => {
+    if (ev.target === ev.currentTarget || ev.target.id === "links") {
+      if (state.selected) { state.selected = null; nodeEls.forEach((el) => el.classList.remove("selected")); renderHint(); }
+    }
+  });
+
+  // ---------- sheets ----------
+  let openSheet = null;
+  const sheets = { entry: $("#entrySheet"), pair: $("#pairSheet"), offset: $("#offsetSheet") };
+  let lastFocus = null;
+  function showSheet(name) {
+    if (openSheet && openSheet !== name) hideSheet(true);
+    const el = sheets[name], scrim = $("#scrim");
+    openSheet = name;
+    lastFocus = document.activeElement;
+    el.hidden = false; scrim.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (openSheet !== name) return;
+      el.classList.add("open"); scrim.classList.add("open");
+    }));
+    el.focus({ preventScroll: true });
+  }
+  function hideSheet(instant) {
+    if (!openSheet) return;
+    const el = sheets[openSheet], scrim = $("#scrim");
+    openSheet = null;
+    el.classList.remove("open"); scrim.classList.remove("open");
+    const done = () => { if (!el.classList.contains("open")) el.hidden = true; if (!openSheet) scrim.hidden = true; };
+    if (instant || !motionOK) done(); else setTimeout(done, 300);
+    if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+  }
+  // 只有在背景上「按下又放開」才關閉，避免打開面板的那一下點擊（ghost click）把它立刻關掉
+  let scrimDown = false;
+  $("#scrim").addEventListener("pointerdown", () => { scrimDown = true; });
+  $("#scrim").addEventListener("click", () => { if (scrimDown) hideSheet(); scrimDown = false; });
+  document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => hideSheet()));
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape" && openSheet) { hideSheet(); return; }
+    if (openSheet === "entry" && document.activeElement !== $("#noteInput")) {
+      if (/^[0-9]$/.test(ev.key)) { press(ev.key); ev.preventDefault(); }
+      else if (ev.key === "Backspace") { press("B"); ev.preventDefault(); }
+      else if (ev.key === "Enter") { saveEntry(); ev.preventDefault(); }
+    }
+  });
+
+  // entry ---------------------------------------------------------
+  // 草稿：giver 是付出錢的人（代墊或還款），receiver 是收到的人
+  let draft = null;
+  function openEntry(opts) {
+    if (state.readOnly) { toast(READONLY_MSG); return; }
+    if (!opts.giver || !opts.receiver) return;
+    draft = { kind: opts.kind || "advance", giver: opts.giver, receiver: opts.receiver, amount: opts.amount || 0 };
+    $("#noteInput").value = "";
+    renderEntry();
+    showSheet("entry");
+  }
+  function renderEntry() {
+    if (!draft) return;
+    const adv = draft.kind === "advance";
+    $("#kindAdvance").setAttribute("aria-pressed", String(adv));
+    $("#kindRepay").setAttribute("aria-pressed", String(!adv));
+    $("#giverChip").replaceChildren(miniAv(draft.giver), h("span", { text: nameOf(draft.giver) }));
+    $("#receiverChip").replaceChildren(miniAv(draft.receiver), h("span", { text: nameOf(draft.receiver) }));
+    $("#verb").textContent = adv ? "幫" : "還給";
+    $("#verbTail").hidden = !adv;
+    const out = $("#amountOut");
+    out.querySelector("b").textContent = draft.amount.toLocaleString("en-US");
+    out.classList.toggle("zero", !draft.amount);
+    $("#noteInput").placeholder = adv ? "備註：吃飯" : "備註：還錢";
+    const save = $("#saveEntry");
+    save.disabled = !draft.amount;
+    save.textContent = adv ? "記下來" : "記錄還款";
+  }
+  function press(k) {
+    if (!draft) return;
+    if (k === "C") draft.amount = 0;
+    else if (k === "B") draft.amount = Math.floor(draft.amount / 10);
+    else { const n = draft.amount * 10 + Number(k); if (n <= 999999) draft.amount = n; }
+    renderEntry();
+  }
+  $("#entrySheet .keypad").addEventListener("click", (ev) => { const b = ev.target.closest("[data-k]"); if (b) press(b.dataset.k); });
+  $("#entrySheet .money").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-add]");
+    if (!b || !draft) return;
+    draft.amount = Math.min(999999, draft.amount + Number(b.dataset.add));
+    renderEntry();
+  });
+  $("#kindAdvance").addEventListener("click", () => { draft.kind = "advance"; renderEntry(); });
+  $("#kindRepay").addEventListener("click", () => { draft.kind = "repay"; renderEntry(); });
+  $("#swapBtn").addEventListener("click", () => { [draft.giver, draft.receiver] = [draft.receiver, draft.giver]; renderEntry(); });
+  $("#saveEntry").addEventListener("click", saveEntry);
+  $("#noteInput").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); saveEntry(); } });
+
+  async function saveEntry() {
+    if (!draft || !draft.amount) return;
+    const d = draft;
+    const adv = d.kind === "advance";
+    const note = $("#noteInput").value.trim() || (adv ? "吃飯" : "還錢");
+    // 代墊：receiver 欠 giver；還款：giver 還給 receiver
+    const body = adv
+      ? { type: "debt", from: d.receiver, to: d.giver, amount: d.amount }
+      : { type: "repay", from: d.giver, to: d.receiver, amount: d.amount };
+    Object.assign(body, { note, createdBy: state.me || null, createdAt: Date.now(), voided: false });
+    const ref = state.db.collection("entries").doc();
+    draft = null;
+    hideSheet();
+    const ok = await write(() => ref.set(body));
+    if (ok) {
+      const what = adv ? `${nameOf(d.giver)} 幫 ${nameOf(d.receiver)} 代墊` : `${nameOf(d.giver)} 還 ${nameOf(d.receiver)}`;
+      toast(`已記下：${what} ${money(d.amount)}`, "復原", () => setVoided(ref.id, true));
+    }
+  }
+
+  // pair ------------------------------------------------------------
+  let pair = null; // { debtor, creditor }
+  function openPair(debtor, creditor) { pair = { debtor, creditor }; renderPair(); showSheet("pair"); }
+  function pairAmount(debtor, creditor) {
+    for (const e of derived.edges) {
+      if (e.from === debtor && e.to === creditor) return e.amount;
+      if (e.from === creditor && e.to === debtor) return -e.amount;
+    }
+    return 0;
+  }
+  function itemLabel(it) {
+    if (it.source === "offset") return "抵銷轉入";
+    if (it.source === "baseline") return "結算前餘額";
+    if (it.source === "repay") return "多還的部分";
+    return it.note || "代墊";
+  }
+  function renderPair() {
+    if (!pair) return;
+    let { debtor, creditor } = pair;
+    let amt = pairAmount(debtor, creditor);
+    if (amt < 0) { [debtor, creditor] = [creditor, debtor]; amt = -amt; pair = { debtor, creditor }; }
+    $("#pairTitle").textContent = amt ? `${nameOf(debtor)} 要還 ${nameOf(creditor)}` : `${nameOf(debtor)} 和 ${nameOf(creditor)} 已結清`;
+    $("#pairAmt").replaceChildren(h("b", { text: money(amt) }));
+    const list = $("#pairList");
+    list.replaceChildren();
+    const open = L.openItems(state.entries, debtor, creditor);
+    const items = open.items.slice().sort((a, b) => b.createdAt - a.createdAt);
+    for (const it of items.slice(0, 8)) {
+      list.append(h("li", null,
+        h("span", { class: "d", text: shortDate(it.createdAt) }),
+        h("span", { class: "t", text: itemLabel(it) }),
+        h("span", { class: "a" }, money(it.remaining), it.remaining < it.original ? h("small", { text: `原本 ${money(it.original)}` }) : null)));
+    }
+    if (items.length > 8) list.append(h("li", { class: "muted small" }, `還有 ${items.length - 8} 筆更早的`));
+    list.hidden = !items.length;
+    $("#pairSettle").disabled = !amt || state.readOnly;
+    $("#pairPartial").disabled = !amt || state.readOnly;
+    $("#pairMore").disabled = state.readOnly;
+  }
+  $("#pairSettle").addEventListener("click", async () => {
+    const amt = pairAmount(pair.debtor, pair.creditor);
+    if (amt <= 0) return;
+    const { debtor, creditor } = pair;
+    const ref = state.db.collection("entries").doc();
+    hideSheet();
+    const ok = await write(() => ref.set({ type: "repay", from: debtor, to: creditor, amount: amt, note: "還清", createdBy: state.me || null, createdAt: Date.now(), voided: false }));
+    if (ok) toast(`${nameOf(debtor)} 已還清 ${nameOf(creditor)} ${money(amt)}`, "復原", () => setVoided(ref.id, true));
+  });
+  $("#pairPartial").addEventListener("click", () => openEntry({ kind: "repay", giver: pair.debtor, receiver: pair.creditor }));
+  $("#pairMore").addEventListener("click", () => openEntry({ kind: "advance", giver: pair.creditor, receiver: pair.debtor }));
+
+  // offset ----------------------------------------------------------
+  function flowRow(e, tag, gone) {
+    return h("li", { class: gone ? "gone" : null },
+      miniAv(e.from), h("span", { class: "nmx", text: nameOf(e.from) }),
+      h("span", { class: "verb2", text: "要還" }),
+      miniAv(e.to), h("span", { class: "nmx", text: nameOf(e.to) }),
+      tag ? h("span", { class: "tag " + tag[0], text: tag[1] }) : null,
+      h("span", { class: "a", text: money(e.amount) }));
+  }
+  function openOffset() {
+    const p = derived.plan;
+    if (!p || !p.useful) return;
+    const before = new Map(p.current.map((e) => [e.from + ">" + e.to, e.amount]));
+    const after = new Map(p.target.map((e) => [e.from + ">" + e.to, e.amount]));
+    $("#beforeTitle").textContent = `現在 · ${p.current.length} 筆`;
+    $("#afterTitle").textContent = `抵銷後 · ${p.target.length} 筆`;
+    $("#beforeList").replaceChildren(...p.current.map((e) => {
+      const gone = !after.has(e.from + ">" + e.to);
+      return flowRow(e, gone ? ["offset", "消掉"] : null, gone);
+    }));
+    $("#afterList").replaceChildren(...(p.target.length ? p.target.map((e) => {
+      const was = before.get(e.from + ">" + e.to);
+      const tag = was == null ? ["new", "債權轉移"] : was > e.amount ? ["repay", "變少"] : null;
+      return flowRow(e, tag, false);
+    }) : [h("li", null, h("span", { class: "nmx", text: "全部互相抵掉，大家都結清了" }))]));
+    const parts = [];
+    if (p.savedCount > 0) parts.push(`少轉 ${p.savedCount} 筆`);
+    if (p.savedFlow > 0) parts.push(`總共少流動 ${money(p.savedFlow)}`);
+    $("#savingLine").textContent = parts.join("，");
+    const nets = $("#netLine");
+    nets.replaceChildren();
+    for (const id in derived.bal) {
+      const b = derived.bal[id];
+      if (!b) continue;
+      nets.append(h("span", { style: "color:var(" + (b > 0 ? "--get" : "--owe") + ")", text: `${nameOf(id)} ${b > 0 ? "收" : "付"} ${money(b)}` }));
+    }
+    $("#confirmOffset").disabled = state.readOnly;
+    showSheet("offset");
+  }
+  $("#offsetBtn").addEventListener("click", openOffset);
+  $("#confirmOffset").addEventListener("click", async () => {
+    const p = L.plan(state.entries);
+    hideSheet();
+    if (!p.useful) { toast("帳已經更新，目前沒有可以抵銷的。"); return; }
+    const ref = state.db.collection("entries").doc();
+    const ok = await write(() => ref.set({
+      type: "offset", items: p.items, before: p.current, after: p.target,
+      note: "抵銷債務", createdBy: state.me || null, createdAt: Date.now(), voided: false,
+    }));
+    if (ok) toast(`已抵銷：${p.current.length} 筆變 ${p.target.length} 筆`, "復原", () => setVoided(ref.id, true));
+  });
+
+  // ---------- 抵銷滿 3 天後整理成結算 ----------
+  let compactTried = false;
+  async function maybeCompact() {
+    if (compactTried || !state.confirmed || state.readOnly || !state.db || state.nodb) return;
+    compactTried = true;
+    try {
+      let plan = L.compactionPlan(state.entries, Date.now());
+      if (!plan && !L.staleIds(state.entries).length) return;
+      const lock = await state.db.doc("meta/compact").acquire({ holder: "c-" + Math.random().toString(36).slice(2), ttlMs: 30000 });
+      if (!lock || !lock.acquired) return;
+      plan = L.compactionPlan(state.entries, Date.now());
+      let all = state.entries;
+      if (plan) {
+        // 先寫結算：從這一刻起舊紀錄就不再計算，就算後面刪到一半中斷也不會算錯
+        await state.db.doc("entries/" + plan.id).set(plan.doc);
+        all = all.filter((e) => e.id !== plan.id).concat([Object.assign({ id: plan.id }, plan.doc)]);
+      }
+      for (const id of L.staleIds(all)) await state.db.doc("entries/" + id).delete();
+    } catch (e) {
+      // 下次開啟時會再試
+    }
+  }
+
+  // ---------- writes ----------
+  async function write(op) {
+    if (!state.db) { toast("沒有連上共享帳本，這筆沒有存到。"); return false; }
+    if (state.readOnly) { toast(READONLY_MSG); return false; }
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try { await op(); return true; }
+      catch (e) {
+        const code = e && e.code;
+        if (code === "unavailable" && attempt === 0) { await sleep(400 + Math.random() * 600); continue; }
+        if (code === "invalid_argument" || code === "not_granted") { setReadOnly(); toast(READONLY_MSG); }
+        else if (code === "quota_exceeded") toast("帳本存滿了，這筆沒有存到。");
+        else if (code === "resource_exhausted") toast("操作太快了，等幾秒再試一次。");
+        else toast("這筆沒有存到，請確認網路後再試一次。");
+        return false;
+      }
+    }
+    return false;
+  }
+  async function setVoided(id, voided) {
+    const ok = await write(() => state.db.doc("entries/" + id).update({ voided, voidedBy: state.me || null, voidedAt: Date.now() }));
+    if (ok) toast(voided ? "已撤銷這筆" : "已恢復這筆", voided ? "恢復" : null, voided ? () => setVoided(id, false) : null);
+  }
+  function setReadOnly() {
+    if (state.readOnly) return;
+    state.readOnly = true;
+    if (openSheet) hideSheet(true);
+    scheduleRender();
+  }
+
+  // ---------- toast ----------
+  let toastTimer = null, toastAction = null;
+  function toast(text, actLabel, act) {
+    $("#toastText").textContent = text;
+    $("#toastBtn").textContent = act ? actLabel : "";
+    toastAction = act || null;
+    $("#toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $("#toast").hidden = true; toastAction = null; }, act ? 6000 : 3500);
+  }
+  $("#toastBtn").addEventListener("click", () => {
+    const a = toastAction;
+    $("#toast").hidden = true; toastAction = null;
+    if (a) a();
+  });
+
+  // ---------- history ----------
+  const WD = "日一二三四五六";
+  function dayKey(t) { const d = new Date(t); return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate(); }
+  function dayLabel(t) {
+    const d = new Date(t), now = new Date();
+    const y = new Date(now); y.setDate(now.getDate() - 1);
+    if (dayKey(t) === dayKey(now)) return "今天";
+    if (dayKey(t) === dayKey(y)) return "昨天";
+    const base = `${d.getMonth() + 1} 月 ${d.getDate()} 日 週${WD[d.getDay()]}`;
+    return d.getFullYear() === now.getFullYear() ? base : d.getFullYear() + " 年 " + base;
+  }
+  function hhmm(t) { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
+  function shortDate(t) { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()}`; }
+  const owesText = (list) => list.map((x) => `${nameOf(x.from)} 要還 ${nameOf(x.to)} ${money(x.amount)}`).join("、");
+
+  function renderLog() {
+    const view = $("#view-log");
+    view.replaceChildren();
+    const list = derived.live.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0) || (a.type === "baseline" ? 1 : -1));
+    if (!list.length) {
+      view.append(h("p", { class: "empty-note", text: state.entriesReady ? "還沒有紀錄。到「關係圖」把代墊的人拖到被代墊的人，就能記第一筆。" : "讀取紀錄中…" }));
+      return;
+    }
+    let curKey = null, ul = null;
+    for (const e of list.slice(0, state.logLimit)) {
+      const k = dayKey(e.createdAt || 0);
+      if (k !== curKey) {
+        curKey = k;
+        view.append(h("h3", { class: "day", text: dayLabel(e.createdAt || 0) }));
+        ul = h("ul", { class: "rows" });
+        view.append(ul);
+      }
+      ul.append(logRow(e));
+    }
+    if (list.length > state.logLimit) {
+      view.append(h("button", { type: "button", class: "secondary more", text: `顯示更早的 ${list.length - state.logLimit} 筆`, onclick: () => { state.logLimit += 100; renderLog(); } }));
+    }
+  }
+  function logRow(e) {
+    let tag, line, amt = "", meta = [], canUndo = true;
+    if (e.type === "baseline") {
+      tag = h("span", { class: "tag base", text: "結算" });
+      line = h("div", { class: "line", text: `較早的紀錄已整理（到 ${shortDate(e.asOf || e.createdAt || 0)}）` });
+      meta.push((e.items && e.items.length) ? "當時：" + owesText(e.items) : "當時大家都結清");
+      canUndo = false;
+    } else if (e.type === "offset") {
+      tag = h("span", { class: "tag offset", text: "抵銷" });
+      const b = (e.before || []).length, a = (e.after || []).length;
+      line = h("div", { class: "line", text: e.before ? `抵銷債務：${b} 筆變 ${a} 筆` : "抵銷債務" });
+      if (e.after && e.after.length) meta.push("之後：" + owesText(e.after));
+      else if (e.after) meta.push("之後：大家都結清");
+      if (!e.voided) meta.push(`${shortDate((e.createdAt || 0) + L.COMPACT_AFTER)} 整理`);
+    } else {
+      const adv = e.type === "debt";
+      tag = h("span", { class: "tag " + (adv ? "debt" : "repay"), text: adv ? "代墊" : "還款" });
+      line = adv
+        ? h("div", { class: "line" }, h("b", { text: nameOf(e.to) }), " 幫 ", h("b", { text: nameOf(e.from) }), " 代墊")
+        : h("div", { class: "line" }, h("b", { text: nameOf(e.from) }), " 還給 ", h("b", { text: nameOf(e.to) }));
+      amt = money(e.amount || 0);
+      if (e.note) meta.push(e.note);
+    }
+    if (e.type !== "baseline") meta.push(((e.createdBy ? nameOf(e.createdBy) + " 記 " : "") + hhmm(e.createdAt || 0)).trim());
+    if (e.voided) meta.push("已撤銷" + (e.voidedBy ? `（${nameOf(e.voidedBy)}）` : ""));
+    const btn = state.readOnly || !canUndo ? null : h("button", {
+      type: "button", class: "mini-btn", text: e.voided ? "恢復" : "撤銷",
+      "aria-label": (e.voided ? "恢復" : "撤銷") + "這筆紀錄",
+      onclick: () => setVoided(e.id, !e.voided),
+    });
+    return h("li", { class: "row" + (e.voided ? " voided" : "") },
+      tag,
+      h("div", { class: "main" }, line, h("div", { class: "meta", text: meta.join(" · ") })),
+      h("div", { class: "side" }, amt ? h("span", { class: "amt", text: amt }) : null, btn));
+  }
+
+  // ---------- people ----------
+  const CAM_SVG = '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"></path><circle cx="12" cy="13" r="3.4"></circle></svg>';
+  function renderPeople() {
+    const view = $("#view-people");
+    const fe = document.activeElement;
+    const keep = fe && fe.tagName === "INPUT" && view.contains(fe) ? { id: fe.id, value: fe.value, a: fe.selectionStart, b: fe.selectionEnd } : null;
+    const drafts = {};
+    for (const id of ["newMemberName", "titleInput"]) { const el = document.getElementById(id); if (el && el.dataset.dirty) drafts[id] = el.value; }
+    view.replaceChildren();
+    const act = activeMembers();
+    const edges = derived.edges;
+    const involved = (id) => edges.some((e) => e.from === id || e.to === id);
+    const canUpload = !!state.assets && !state.readOnly;
+
+    // 帳本名稱
+    view.append(h("h3", { class: "section-title", text: "帳本名稱" }));
+    const tIn = h("input", { class: "field", id: "titleInput", maxlength: "16", placeholder: DEFAULT_TITLE, "aria-label": "帳本名稱", autocomplete: "off", disabled: state.readOnly || null });
+    tIn.value = state.title || "";
+    tIn.addEventListener("input", () => { tIn.dataset.dirty = "1"; });
+    tIn.addEventListener("keydown", (ev) => { if (ev.key === "Enter") saveTitle(tIn.value); });
+    view.append(h("div", { class: "card" }, h("div", { class: "title-row" }, tIn,
+      state.readOnly ? null : h("button", { type: "button", class: "primary", text: "儲存", onclick: () => saveTitle(tIn.value) }))));
+
+    view.append(h("h3", { class: "section-title", text: "這支手機是誰在用" }));
+    const pick = h("div", { class: "pick" });
+    for (const m of act) {
+      pick.append(h("button", { type: "button", "aria-pressed": String(m.id === state.me), onclick: () => setMe(m.id) }, miniAv(m.id), h("span", { text: m.name })));
+    }
+    if (!act.length) pick.append(h("span", { class: "muted small", text: "還沒有成員" }));
+    view.append(h("div", { class: "card" }, pick));
+
+    view.append(h("h3", { class: "section-title", text: `成員（${act.length}/${MAX_MEMBERS}）` }));
+    const card = h("div", { class: "card flat" });
+    for (const m of act) {
+      const b = derived.bal[m.id] || 0;
+      const input = h("input", { class: "field", id: "name-" + m.id, maxlength: "12", "aria-label": m.name + " 的名字", disabled: state.readOnly || null });
+      input.value = m.name;
+      input.addEventListener("change", () => renameMember(m.id, input.value));
+      input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") input.blur(); });
+      const busy = involved(m.id);
+      const uploading = state.uploading.has(m.id);
+      const av = h("span", { class: "av" });
+      fillAvatar(av, m);
+      const avBtn = h("button", {
+        type: "button", class: "av-btn" + (uploading ? " busy" : ""), disabled: !canUpload || uploading || null,
+        "aria-label": canUpload ? `換 ${m.name} 的頭貼` : `${m.name} 的頭像`,
+        onclick: () => pickPhoto(m.id),
+      }, av);
+      if (canUpload) { const cam = h("span", { class: "cam", "aria-hidden": "true" }); cam.innerHTML = CAM_SVG; avBtn.append(cam); }
+      const sub = h("div", { class: "sub" },
+        h("span", { text: (b > 0 ? "應收 " + money(b) : b < 0 ? "應付 " + money(b) : "結清") + (busy ? " · 有未結清的帳，不能移除" : "") }),
+        uploading ? h("span", { text: "頭貼上傳中…" }) : null,
+        canUpload && photoId(m) && !uploading ? h("button", { type: "button", text: "移除頭貼", onclick: () => removePhoto(m.id) }) : null);
+      card.append(h("div", { class: "prow" },
+        avBtn,
+        h("div", { style: "min-width:0" }, input, sub),
+        state.readOnly ? null : h("button", { type: "button", class: "mini-btn", text: "移除", disabled: busy || null, onclick: () => archiveMember(m.id, true) })));
+    }
+    if (!act.length) card.append(h("div", { class: "prow" }, h("span", { class: "muted small", text: "還沒有成員" })));
+    view.append(card);
+    if (state.assets === null && !state.readOnly && state.confirmed && !state.localMode) {
+      view.append(h("p", { class: "small muted", text: "只有編輯者可以上傳頭貼。" }));
+    }
+
+    if (!state.readOnly) {
+      const nameIn = h("input", { class: "field", id: "newMemberName", maxlength: "12", placeholder: "新成員名字", "aria-label": "新成員名字", autocomplete: "off" });
+      nameIn.addEventListener("input", () => { nameIn.dataset.dirty = "1"; });
+      const add = h("button", { type: "button", class: "primary", text: "加入", disabled: act.length >= MAX_MEMBERS || null, onclick: () => { addMember(nameIn.value); } });
+      nameIn.addEventListener("keydown", (ev) => { if (ev.key === "Enter") addMember(nameIn.value); });
+      view.append(h("div", { class: "add-row" }, nameIn, add));
+      if (act.length >= MAX_MEMBERS) view.append(h("p", { class: "small muted", text: `最多 ${MAX_MEMBERS} 人。` }));
+    }
+
+    const gone = state.members.filter((m) => m.archived);
+    if (gone.length) {
+      view.append(h("h3", { class: "section-title", text: "已移除的成員" }));
+      const c = h("div", { class: "card flat" });
+      for (const m of gone) {
+        c.append(h("div", { class: "prow" }, miniAv(m.id), h("span", { text: m.name }),
+          state.readOnly ? null : h("button", { type: "button", class: "mini-btn", text: "加回來", disabled: act.length >= MAX_MEMBERS || null, onclick: () => archiveMember(m.id, false) })));
+      }
+      view.append(c);
+    }
+
+    if (state.localMode) {
+      view.append(h("h3", { class: "section-title", text: "資料備份" }));
+      view.append(h("div", { class: "card" },
+        h("p", { class: "small", style: "margin:0 0 10px", text: "本機模式：帳本只存在這支手機的瀏覽器。換手機或清除瀏覽資料前，先匯出備份。" }),
+        h("div", { class: "btn-row" },
+          h("button", { type: "button", class: "secondary", text: "匯出備份", onclick: exportBackup }),
+          h("button", { type: "button", class: "secondary", text: "匯入備份", onclick: () => $("#importInput").click() }))));
+    }
+    view.append(h("h3", { class: "section-title", text: "關於 EatTogether" }));
+    view.append(h("div", { class: "card" }, h("div", { class: "pick" },
+      h("a", { class: "secondary link-btn", href: "../index.html", text: "網站首頁" }),
+      h("a", { class: "secondary link-btn", href: "../pages/guide.html", text: "使用教學" }),
+      h("a", { class: "secondary link-btn", href: "../pages/algorithm.html", text: "抵銷怎麼算" }))));
+
+    if (state.isOwner && !state.localMode) {
+      view.append(h("h3", { class: "section-title", text: "分享給朋友" }));
+      view.append(h("div", { class: "card" },
+        h("ol", { class: "steps" },
+          h("li", { text: "朋友需要有 claude.ai 帳號，打開時要登入。" }),
+          h("li", null, "用右上角的分享，輸入朋友的 email，權限選「", h("b", { text: "編輯者" }), "」。"),
+          h("li", null, h("b", { text: "不要開公開連結" }), "：開了之後，受邀的朋友就不能記帳了。"),
+          h("li", { text: "在手機瀏覽器把網址加到主畫面，用起來像 App。" }))));
+    }
+
+    for (const id in drafts) { const el = document.getElementById(id); if (el) { el.value = drafts[id]; el.dataset.dirty = "1"; } }
+    if (keep) {
+      const el = document.getElementById(keep.id);
+      if (el) { el.value = keep.value; el.focus(); try { el.setSelectionRange(keep.a, keep.b); } catch (e) {} }
+    }
+  }
+  function setMe(id) {
+    state.me = id;
+    local.set(ME_KEY, id);
+    state.skippedPicker = false;
+    scheduleRender();
+  }
+  function nextColor() {
+    const used = new Set(activeMembers().map((m) => (m.color | 0) % 8));
+    for (let i = 0; i < 8; i++) if (!used.has(i)) return i;
+    return state.members.length % 8;
+  }
+  async function saveTitle(raw) {
+    const title = (raw || "").trim().slice(0, 16);
+    if (title === (state.title || "").trim()) { toast("名稱沒有變"); return; }
+    const ok = await write(() => state.db.doc("meta/settings").set({ title, updatedAt: Date.now() }));
+    if (ok) {
+      const el = $("#titleInput"); if (el) delete el.dataset.dirty;
+      toast(title ? `帳本名稱改成「${title}」` : `帳本名稱改回「${DEFAULT_TITLE}」`);
+    }
+  }
+  async function addMember(raw) {
+    const name = (raw || "").trim().slice(0, 12);
+    if (!name) { toast("先輸入名字"); return; }
+    if (activeMembers().length >= MAX_MEMBERS) return;
+    if (activeMembers().some((m) => m.name === name)) { toast("已經有叫「" + name + "」的人了"); return; }
+    const order = Math.max(-1, ...state.members.map((m) => m.order | 0)) + 1;
+    const ok = await write(() => state.db.collection("members").doc().set({ name, color: nextColor(), order, archived: false, createdAt: Date.now() }));
+    if (ok) { toast("已加入 " + name); const el = $("#newMemberName"); if (el) { el.value = ""; delete el.dataset.dirty; } }
+  }
+  async function renameMember(id, raw) {
+    const name = (raw || "").trim().slice(0, 12);
+    const m = memberById(id);
+    if (!m || !name || name === m.name) { scheduleRender(); return; }
+    await write(() => state.db.doc("members/" + id).update({ name }));
+  }
+  async function archiveMember(id, archived) {
+    const m = memberById(id);
+    if (!m) return;
+    if (archived && derived.edges.some((e) => e.from === id || e.to === id)) { toast("還有未結清的帳，不能移除"); return; }
+    const patch = archived ? { archived: true } : { archived: false, order: Math.max(-1, ...state.members.map((x) => x.order | 0)) + 1 };
+    const ok = await write(() => state.db.doc("members/" + id).update(patch));
+    if (ok) toast(archived ? `已移除 ${m.name}` : `${m.name} 加回來了`, archived ? "復原" : null, archived ? () => archiveMember(id, false) : null);
+  }
+
+  // ---------- 頭貼 ----------
+  let photoFor = null;
+  function pickPhoto(id) {
+    if (!state.assets || state.readOnly) return;
+    photoFor = id;
+    const input = $("#photoInput");
+    input.value = "";
+    input.click();
+  }
+  $("#photoInput").addEventListener("change", (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    const id = photoFor;
+    photoFor = null;
+    if (file && id) processPhoto(file, id);
+  });
+  function squareJpeg(file, size) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const s = Math.min(img.naturalWidth, img.naturalHeight);
+          if (!s) throw { code: "decode" };
+          const c = document.createElement("canvas");
+          c.width = c.height = size;
+          const ctx = c.getContext("2d");
+          ctx.drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, size, size);
+          c.toBlob((b) => { URL.revokeObjectURL(url); b ? resolve(b) : reject({ code: "decode" }); }, "image/jpeg", 0.85);
+        } catch (e) { URL.revokeObjectURL(url); reject(e && e.code ? e : { code: "decode" }); }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject({ code: "decode" }); };
+      img.src = url;
+    });
+  }
+  function photoError(e) {
+    switch (e && e.code) {
+      case "decode": return "這張圖片讀不到，換一張試試。";
+      case "too_large": return "圖片太大了，換一張小一點的。";
+      case "unsupported_type": return "不支援這種圖片格式，換一張試試。";
+      case "rate_limited": return "上傳太頻繁了，等一下再試。";
+      case "quota_or_state": return "頭貼空間滿了，先移除一些舊頭貼。";
+      case "upstream_auth": return "登入狀態過期了，重新整理頁面再試一次。";
+      case "not_granted": case "capability_disabled": case "capability_removed": return "你目前不能上傳頭貼，需要編輯者權限。";
+      default: return "頭貼沒有上傳成功，請確認網路後再試一次。";
+    }
+  }
+  async function processPhoto(file, id) {
+    if (file.type && !/^image\//.test(file.type)) { toast("請選一張圖片。"); return; }
+    state.uploading.add(id);
+    scheduleRender();
+    try {
+      const blob = await squareJpeg(file, 256);
+      let res;
+      try { res = await state.assets.upload(blob, { type: "image/jpeg" }); }
+      catch (e) {
+        if (e && e.code === "store_unavailable") { await sleep(800); res = await state.assets.upload(blob, { type: "image/jpeg" }); }
+        else throw e;
+      }
+      const old = photoId(memberById(id)) || (memberById(id) || {}).photo;
+      const ok = await write(() => state.db.doc("members/" + id).update({ photo: res.id }));
+      if (ok) {
+        toast("頭貼更新了");
+        if (old && old !== res.id) state.assets.delete(old).catch(() => {});
+      } else state.assets.delete(res.id).catch(() => {});
+    } catch (e) {
+      toast(photoError(e));
+    } finally {
+      state.uploading.delete(id);
+      scheduleRender();
+    }
+  }
+  async function removePhoto(id) {
+    const m = memberById(id);
+    const old = m && m.photo;
+    if (!old) return;
+    const ok = await write(() => state.db.doc("members/" + id).update({ photo: null }));
+    if (ok) {
+      toast("已移除頭貼");
+      if (state.assets) state.assets.delete(old).catch(() => {});
+    }
+  }
+
+  // ---------- 本機模式備份 ----------
+  function exportBackup() {
+    const json = JSON.stringify(window.EatStore.local.exportAll(), null, 2);
+    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    const a = h("a", { href: url, download: `eattogether-${new Date().toISOString().slice(0, 10)}.json` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast("已匯出備份檔");
+  }
+  $("#importInput").addEventListener("change", (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    ev.target.value = "";
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        window.EatStore.local.importAll(JSON.parse(r.result));
+        state.skippedPicker = false;
+        toast("已匯入備份");
+      } catch (e) { toast("這不是 EatTogether 的備份檔。"); }
+    };
+    r.readAsText(file);
+  });
+
+  // ---------- onboarding & picker ----------
+  let obBusy = false;
+  function obField(value) {
+    const wrap = h("div", { class: "ob-item" });
+    const n = $("#obList").children.length + 1;
+    const input = h("input", { class: "field", id: "ob-" + n, maxlength: "12", placeholder: `第 ${n} 位的名字`, "aria-label": `第 ${n} 位的名字`, value: value || "" });
+    wrap.append(h("span", { class: "mini-av", style: `--c:var(--m${(n - 1) % 8})`, text: String(n) }), input);
+    return wrap;
+  }
+  function ensureObFields() {
+    const list = $("#obList");
+    if (!list.children.length) for (let i = 0; i < 3; i++) list.append(obField());
+  }
+  $("#obAdd").addEventListener("click", () => {
+    const list = $("#obList");
+    if (list.children.length >= MAX_MEMBERS) return;
+    const f = obField();
+    list.append(f);
+    f.querySelector("input").focus();
+    $("#obAdd").disabled = list.children.length >= MAX_MEMBERS;
+  });
+  $("#obForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    if (obBusy) return;
+    const names = [];
+    for (const inp of $("#obList").querySelectorAll("input")) {
+      const v = inp.value.trim().slice(0, 12);
+      if (v && !names.includes(v)) names.push(v);
+    }
+    const title = $("#obTitle").value.trim().slice(0, 16);
+    const msg = $("#obMsg");
+    if (names.length < 2) { msg.hidden = false; msg.textContent = "至少要兩個人才能記帳。"; return; }
+    obBusy = true;
+    $("#obGo").disabled = true;
+    msg.hidden = false; msg.textContent = "建立中…";
+    try {
+      const lock = await state.db.doc("meta/setup").acquire({ holder: "setup-" + Math.random().toString(36).slice(2), ttlMs: 15000 });
+      if (!lock.acquired) { msg.textContent = "有人正在建立成員，稍等一下。"; return; }
+      const existing = await state.db.collection("members").get();
+      if (!existing.empty) { msg.textContent = "已經有人建立好成員了。"; return; }
+      const now = Date.now();
+      if (title) await state.db.doc("meta/settings").set({ title, updatedAt: now });
+      for (let i = 0; i < names.length; i++) {
+        await state.db.collection("members").doc().set({ name: names[i], color: i % 8, order: i, archived: false, createdAt: now + i });
+      }
+      await state.db.doc("meta/setup").set({ done: true, at: now });
+      msg.hidden = true;
+    } catch (e) {
+      if (e && (e.code === "invalid_argument" || e.code === "not_granted")) { setReadOnly(); msg.textContent = READONLY_MSG; }
+      else msg.textContent = "沒有建立成功，請確認網路後再試一次。";
+    } finally {
+      obBusy = false;
+      $("#obGo").disabled = false;
+    }
+  });
+  $("#meBtn").addEventListener("click", () => { state.skippedPicker = false; showPicker(true); });
+
+  let pickerForced = false;
+  function showPicker(force) { pickerForced = !!force; renderOverlays(); }
+  function renderOverlays() {
+    const act = activeMembers();
+    const needOnboard = state.membersReady && state.confirmed && act.length === 0 && !state.members.length && !state.readOnly && !state.nodb;
+    const ob = $("#onboard");
+    if (needOnboard) ensureObFields();
+    ob.hidden = !needOnboard;
+
+    const meValid = act.some((m) => m.id === state.me);
+    const needPick = !needOnboard && state.membersReady && act.length > 0 && (pickerForced || (!meValid && !state.skippedPicker));
+    const pk = $("#picker");
+    if (needPick) {
+      const list = $("#pickList");
+      list.replaceChildren(...act.map((m) => {
+        const av = h("span", { class: "av" });
+        fillAvatar(av, m);
+        return h("button", {
+          type: "button", "aria-pressed": String(m.id === state.me),
+          onclick: () => { pickerForced = false; setMe(m.id); },
+        }, av, h("span", { text: m.name }));
+      }));
+      $("#pickLater").textContent = meValid ? "不用改" : "先不選，只看帳";
+      $("#pickLater").onclick = () => { pickerForced = false; state.skippedPicker = true; scheduleRender(); };
+    }
+    pk.hidden = !needPick;
+  }
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+    state.tab = b.dataset.tab;
+    document.querySelectorAll(".tabs button").forEach((x) => { if (x === b) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current"); });
+    $("#view-graph").hidden = state.tab !== "graph";
+    $("#view-log").hidden = state.tab !== "log";
+    $("#view-people").hidden = state.tab !== "people";
+    state.selected = null;
+    scheduleRender();
+  }));
+
+  // ---------- sync ----------
+  let unsubs = [];
+  let loadTimer = null;
+  function subscribe() {
+    const db = state.db;
+    const flags = { members: null, entries: null };
+    const pend = { members: false, entries: false };
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(() => { if (!state.confirmed) { state.stale = true; scheduleRender(); } }, 10000);
+    const onMeta = (name, snap) => {
+      flags[name] = snap.metadata.fromCache;
+      pend[name] = snap.metadata.hasPendingWrites;
+      if (!state.confirmed && flags.members === false && flags.entries === false) {
+        state.confirmed = true; state.stale = false; clearTimeout(loadTimer);
+      }
+      state.fromCache = !!(flags.members || flags.entries);
+      state.pending = pend.members || pend.entries;
+    };
+    const onErr = (e) => {
+      clearTimeout(loadTimer);
+      if (e && e.code === "revoked") { state.nodb = true; }
+      else state.error = true;
+      scheduleRender();
+    };
+    unsubs.push(db.collection("members").onSnapshot((snap) => {
+      state.members = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()))
+        .sort((a, b) => (a.order | 0) - (b.order | 0) || (a.createdAt || 0) - (b.createdAt || 0));
+      state.membersReady = true;
+      onMeta("members", snap);
+      scheduleRender();
+    }, onErr));
+    unsubs.push(db.collection("entries").onSnapshot((snap) => {
+      state.entries = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+      state.entriesReady = true;
+      onMeta("entries", snap);
+      scheduleRender();
+    }, onErr));
+    try {
+      unsubs.push(db.doc("meta/settings").onSnapshot((snap) => {
+        const data = snap.exists ? snap.data() : null;
+        state.title = data && typeof data.title === "string" ? data.title.slice(0, 16) : "";
+        scheduleRender();
+      }, () => {}));
+    } catch (e) {}
+  }
+  function resubscribe() {
+    unsubs.forEach((u) => { try { u(); } catch (e) {} });
+    unsubs = [];
+    state.error = false; state.confirmed = false; state.stale = false;
+    scheduleRender();
+    subscribe();
+  }
+
+  // 沒有 claude.ai 共享資料庫時（例如 GitHub Pages），改用存在這台裝置的本機模式
+  function useLocal() {
+    state.localMode = true;
+    state.db = window.EatStore.local.db;
+    state.assets = window.EatStore.local.assets;
+    subscribe();
+  }
+
+  async function boot() {
+    renderAll();
+    const c = window.claude;
+    if (!c || typeof c.use !== "function") { useLocal(); return; }
+    const safe = (p) => Promise.resolve(p).catch(() => null);
+    const [db, user, assets] = await Promise.all([safe(c.use("db")), safe(c.use("user")), safe(c.use("assets"))]);
+    state.user = user;
+    state.assets = assets || null;
+    if (!db) { useLocal(); return; }
+    state.db = db;
+    if (user) {
+      try { user.isOwner().then((v) => { state.isOwner = !!v; scheduleRender(); }, () => {}); } catch (e) {}
+      try { if (typeof user.can === "function") user.can("data.write").then((v) => { if (v === false) setReadOnly(); }, () => {}); } catch (e) {}
+    }
+    subscribe();
+  }
+
+  if (window.ResizeObserver) new ResizeObserver(() => scheduleRender()).observe($("#stage"));
+  else window.addEventListener("resize", scheduleRender);
+  boot();
+})();
+</script>
+</body>
+</html>

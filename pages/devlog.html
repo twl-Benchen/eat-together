@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>開發日誌 · EatTogether</title>
+<meta name="description" content="EatTogether 每一版改了什麼、為什麼改。">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+<header class="site-header" data-site-header>
+  <div class="wrap">
+    <a class="brand" href="../index.html"><img src="../assets/img/favicon.svg" alt=""><span><b>EatTogether</b> 飯友帳本</span></a>
+    <nav class="site-nav" aria-label="網站導覽">
+      <a href="../index.html">首頁</a>
+      <a href="../app/index.html">記帳</a>
+      <a href="../pages/guide.html">教學</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page wrap">
+  <div class="page-head">
+    <p class="eyebrow">紀錄</p>
+    <h1>開發日誌</h1>
+    <p class="lead">從第一版到現在，每次改版的內容與原因。</p>
+  </div>
+  <p>每次改版都寫在這裡，最新的在最上面。新增頁面或改功能時，依照 <code>CLAUDE.md</code> 的規定在這裡加一條。</p>
+
+  <article class="card">
+    <p class="eyebrow">2026-11-05 · v3</p>
+    <h3>搬上 GitHub，變成可以繼續擴充的網站</h3>
+    <ul>
+      <li>建立 <code>CLAUDE.md</code> 專案手冊：設計規範、頁面結構、新增頁面 SOP、驗收標準。</li>
+      <li>帳本 App 加上<b>本機模式</b>：不在 claude.ai 時，資料存在瀏覽器，並可以匯出、匯入備份。</li>
+      <li>新增首頁、使用教學、抵銷怎麼算、開發日誌、聰明分帳小工具。</li>
+      <li>新增 <code>tools/check.mjs</code>，檢查首頁清單、頁面結構和連結。</li>
+    </ul>
+  </article>
+
+  <article class="card">
+    <p class="eyebrow">2026-11-04 · v2.1</p>
+    <h3>箭頭＝誰要給誰錢；硬幣拋物線動畫</h3>
+    <ul>
+      <li>試用後覺得「代墊方向」的箭頭不直覺，改回「欠錢的人 → 收錢的人」。</li>
+      <li>拖曳動畫從「彈性黏液球」改成「硬幣拋物線」，頭像外框不再變形。</li>
+      <li>名字加上「（我）」時不會被截斷。</li>
+    </ul>
+  </article>
+
+  <article class="card">
+    <p class="eyebrow">2026-11-03 · v2</p>
+    <h3>代墊語意、莫蘭迪配色、自動整理、頭貼</h3>
+    <ul>
+      <li>拖曳的意思改成「誰幫誰代墊」，記帳面板分「代墊／還款」。</li>
+      <li>配色從紅綠藍換成莫蘭迪藍灰＋杏橘。</li>
+      <li>抵銷滿 3 天後，舊紀錄自動整理成一筆「結算」，帳不變。</li>
+      <li>兩人明細只顯示還沒還的部分，用先進先出計算剩餘金額。</li>
+      <li>成員可以上傳頭貼；帳本名稱可以自訂。</li>
+    </ul>
+  </article>
+
+  <article class="card">
+    <p class="eyebrow">2026-11-03 · v1</p>
+    <h3>第一版：拖曳記帳＋一鍵抵銷</h3>
+    <ul>
+      <li>起因：三個同學吃飯常常鈔票找不開，互相欠錢記不清楚。</li>
+      <li>用拖曳頭像記「誰欠誰」，關係圖畫出每兩人之間的淨額。</li>
+      <li>「抵銷債務」處理循環互欠和債權轉移，3 個人最多只要轉 2 筆。</li>
+      <li>在 claude.ai 用共享資料庫讓大家的手機同步。</li>
+    </ul>
+  </article>
+</main>
+
+<footer class="site-footer" data-site-footer>
+  <div class="wrap">
+    <span>© <span data-year>2026</span> EatTogether 飯友帳本</span>
+    <a href="../index.html">回首頁</a>
+    <a href="../pages/devlog.html">開發日誌</a>
+  </div>
+</footer>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

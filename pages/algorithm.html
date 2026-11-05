@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>抵銷怎麼算 · EatTogether</title>
+<meta name="description" content="用圖解說明循環互欠、債權轉移，以及為什麼 3 個人最多只要轉 2 筆。">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+<header class="site-header" data-site-header>
+  <div class="wrap">
+    <a class="brand" href="../index.html"><img src="../assets/img/favicon.svg" alt=""><span><b>EatTogether</b> 飯友帳本</span></a>
+    <nav class="site-nav" aria-label="網站導覽">
+      <a href="../index.html">首頁</a>
+      <a href="../app/index.html">記帳</a>
+      <a href="../pages/guide.html">教學</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page wrap">
+  <div class="page-head">
+    <p class="eyebrow">原理</p>
+    <h1>抵銷怎麼算</h1>
+    <p class="lead">按下「抵銷債務」時，背後發生了什麼事。</p>
+  </div>
+  <h2>先把每兩個人之間算清楚</h2>
+  <p>每一筆紀錄都只影響兩個人。同一對人之間來回的代墊與還款先互相抵掉，只留下一個方向的淨額。例如小明幫小華墊了 <span class="num">$120</span>、小華後來還了 <span class="num">$50</span>，兩人之間就只剩「小華要給小明 <span class="num">$70</span>」。</p>
+
+  <h2>情況一：循環互欠</h2>
+  <p>A 欠 B、B 欠 C、C 欠 A 各 <span class="num">$100</span>。每個人都同時要付 100、要收 100，淨額是 0，所以三筆可以全部消掉。</p>
+  <figure class="figure diagram">
+    <svg viewBox="0 0 640 220" role="img" aria-label="循環互欠：三筆各 100 元，抵銷後全部歸零">
+      <g font-family="Noto Sans TC, sans-serif" font-size="16" text-anchor="middle">
+        <g stroke="var(--owe-line)" stroke-width="4" fill="none" stroke-linecap="round">
+          <path d="M98 168 L150 64"/><path d="M178 52 L232 160"/><path d="M212 182 L110 182"/>
+        </g>
+        <g fill="var(--owe-line)"><path d="M156 52 l3 20 l-15 -7z"/><path d="M238 172 l-16 -12 l15 -6z"/><path d="M98 182 l15 -8 v16z"/></g>
+        <circle cx="90" cy="182" r="26" fill="var(--get-line)"/><text x="90" y="188" fill="#fff" font-weight="700">A</text>
+        <circle cx="164" cy="40" r="26" fill="var(--get-line)"/><text x="164" y="46" fill="#fff" font-weight="700">B</text>
+        <circle cx="238" cy="182" r="26" fill="var(--get-line)"/><text x="238" y="188" fill="#fff" font-weight="700">C</text>
+        <text x="104" y="110" fill="var(--ink)">100</text><text x="226" y="110" fill="var(--ink)">100</text><text x="164" y="210" fill="var(--ink)">100</text>
+        <path d="M300 112 h60" stroke="var(--muted)" stroke-width="3"/><path d="M360 112 l-12 -8 v16z" fill="var(--muted)"/>
+        <circle cx="430" cy="182" r="26" fill="var(--get-line)"/><text x="430" y="188" fill="#fff" font-weight="700">A</text>
+        <circle cx="504" cy="40" r="26" fill="var(--get-line)"/><text x="504" y="46" fill="#fff" font-weight="700">B</text>
+        <circle cx="578" cy="182" r="26" fill="var(--get-line)"/><text x="578" y="188" fill="#fff" font-weight="700">C</text>
+        <text x="504" y="125" fill="var(--muted)">全部結清</text>
+      </g>
+    </svg>
+    <figcaption>左：抵銷前 3 筆。右：抵銷後 0 筆。</figcaption>
+  </figure>
+
+  <h2>情況二：債權轉移</h2>
+  <p>A 欠 B <span class="num">$100</span>、B 欠 C <span class="num">$60</span>。B 收到 A 的錢之後只是轉手給 C，所以直接讓 A 付 60 給 C，B 只收剩下的 40。總共流動的錢從 160 變成 100。</p>
+  <figure class="figure diagram">
+    <svg viewBox="0 0 640 200" role="img" aria-label="債權轉移：A 欠 B 100、B 欠 C 60，變成 A 欠 B 40、A 欠 C 60">
+      <g font-family="Noto Sans TC, sans-serif" font-size="16" text-anchor="middle">
+        <g stroke="var(--owe-line)" stroke-width="4" fill="none" stroke-linecap="round"><path d="M68 100 H130"/><path d="M188 100 H250"/></g>
+        <g fill="var(--owe-line)"><path d="M136 100 l-14 -8 v16z"/><path d="M256 100 l-14 -8 v16z"/></g>
+        <circle cx="40" cy="100" r="26" fill="var(--get-line)"/><text x="40" y="106" fill="#fff" font-weight="700">A</text>
+        <circle cx="160" cy="100" r="26" fill="var(--get-line)"/><text x="160" y="106" fill="#fff" font-weight="700">B</text>
+        <circle cx="280" cy="100" r="26" fill="var(--get-line)"/><text x="280" y="106" fill="#fff" font-weight="700">C</text>
+        <text x="100" y="86" fill="var(--ink)">100</text><text x="220" y="86" fill="var(--ink)">60</text>
+        <path d="M318 100 h40" stroke="var(--muted)" stroke-width="3"/><path d="M358 100 l-12 -8 v16z" fill="var(--muted)"/>
+        <g stroke="var(--owe-line)" stroke-width="4" fill="none" stroke-linecap="round"><path d="M428 100 H490"/><path d="M412 124 Q520 190 618 124"/></g>
+        <g fill="var(--owe-line)"><path d="M496 100 l-14 -8 v16z"/><path d="M624 118 l-6 16 l-10 -12z"/></g>
+        <circle cx="400" cy="100" r="26" fill="var(--get-line)"/><text x="400" y="106" fill="#fff" font-weight="700">A</text>
+        <circle cx="520" cy="100" r="26" fill="var(--get-line)"/><text x="520" y="106" fill="#fff" font-weight="700">B</text>
+        <circle cx="610" cy="100" r="26" fill="var(--get-line)"/><text x="610" y="106" fill="#fff" font-weight="700">C</text>
+        <text x="460" y="86" fill="var(--ink)">40</text><text x="520" y="178" fill="var(--ink)">60</text>
+      </g>
+    </svg>
+    <figcaption>左：抵銷前 A→B 100、B→C 60。右：A→B 40、A→C 60。B 的淨額一樣是「收 40」。</figcaption>
+  </figure>
+
+  <h2>演算法：最大的欠款人配最大的債權人</h2>
+  <ol>
+    <li>算出每個人的<b>淨額</b>：別人欠他的總和減掉他欠別人的總和。正數是要收、負數是要付，全部加起來一定是 0。</li>
+    <li>把要付最多的人和要收最多的人配對，轉兩者中較小的金額。</li>
+    <li>其中一人歸零就換下一位，重複到所有人都是 0。</li>
+  </ol>
+  <p>每一次配對至少讓一個人歸零，所以 <b>n 個人最多只要 n−1 筆轉帳</b>。3 個人最多 2 筆。程式在 <code>app/ledger.js</code> 的 <code>simplify()</code>，測試在 <code>test/ledger.test.mjs</code>（含 1000 組隨機帳）。</p>
+
+  <h2>自己試試看</h2>
+  <div class="card" id="demo">
+    <div class="grid-2">
+      <div><label for="ab">A 欠 B</label><input class="field num" id="ab" type="number" min="0" step="1" value="100" inputmode="numeric"></div>
+      <div><label for="bc">B 欠 C</label><input class="field num" id="bc" type="number" min="0" step="1" value="60" inputmode="numeric"></div>
+      <div><label for="ca">C 欠 A</label><input class="field num" id="ca" type="number" min="0" step="1" value="0" inputmode="numeric"></div>
+    </div>
+    <h3>抵銷後</h3>
+    <p id="demoOut" class="num" aria-live="polite"></p>
+    <p id="demoNote" class="small muted"></p>
+  </div>
+  <script src="../app/ledger.js"></script>
+  <script>
+    (() => {
+      const ids = ["ab", "bc", "ca"], pairs = [["A", "B"], ["B", "C"], ["C", "A"]];
+      function run() {
+        const entries = ids.map((id, i) => ({ type: "debt", from: pairs[i][0], to: pairs[i][1], amount: Math.max(0, Math.round(+document.getElementById(id).value || 0)) }));
+        const p = Ledger.plan(entries);
+        document.getElementById("demoOut").textContent = p.target.length ? p.target.map((e) => `${e.from} 給 ${e.to} $${e.amount}`).join("、") : "大家都結清了";
+        document.getElementById("demoNote").textContent = `原本 ${p.current.length} 筆（共 $${Ledger.totalFlow(p.current)}），抵銷後 ${p.target.length} 筆（共 $${Ledger.totalFlow(p.target)}）。`;
+      }
+      ids.forEach((id) => document.getElementById(id).addEventListener("input", run));
+      run();
+    })();
+  </script>
+</main>
+
+<footer class="site-footer" data-site-footer>
+  <div class="wrap">
+    <span>© <span data-year>2026</span> EatTogether 飯友帳本</span>
+    <a href="../index.html">回首頁</a>
+    <a href="../pages/devlog.html">開發日誌</a>
+  </div>
+</footer>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

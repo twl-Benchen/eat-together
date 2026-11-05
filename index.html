@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>EatTogether 飯友帳本</title>
+<meta name="description" content="朋友一起吃飯互相代墊時用的記帳工具：拖曳記帳、一鍵抵銷債務，附教學與原理說明。">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="assets/css/site.css">
+<style>
+  .hero { display: grid; gap: 20px; align-items: center; }
+  .hero .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .hero img { max-width: 300px; justify-self: center; border-radius: 22px; box-shadow: var(--shadow); border: 1px solid var(--line); }
+  @media (min-width: 640px) { .hero { grid-template-columns: 1.2fr 1fr; } }
+</style>
+</head>
+<body>
+<header class="site-header" data-site-header>
+  <div class="wrap">
+    <a class="brand" href="index.html"><img src="assets/img/favicon.svg" alt=""><span><b>EatTogether</b> 飯友帳本</span></a>
+    <nav class="site-nav" aria-label="網站導覽">
+      <a href="index.html">首頁</a>
+      <a href="app/index.html">記帳</a>
+      <a href="pages/guide.html">教學</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page wrap">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">鈔票找不開也不怕</p>
+      <h1>EatTogether 飯友帳本</h1>
+      <p class="lead">誰幫誰先付了錢，把硬幣從他身上拖到對方身上就記好了。欠來欠去時按一下「抵銷債務」，用最少的轉帳結清。</p>
+      <div class="actions">
+        <a class="btn" href="app/index.html">開始記帳</a>
+        <a class="btn secondary" href="pages/guide.html">看使用教學</a>
+      </div>
+    </div>
+    <img src="assets/img/home-app.png" alt="記帳 App 的關係圖：三個人之間的欠款箭頭" width="300">
+  </section>
+
+  <h2>所有頁面</h2>
+  <!-- PAGE-LIST:START  這份清單要和 pages.json 一致；新增頁面時兩邊都要改（見 CLAUDE.md） -->
+  <ul class="page-list" id="pageList">
+      <li><a class="page-card" href="app/index.html"><span class="tag">App</span><h3>記帳 App</h3><p>把硬幣從代墊的人拖到被代墊的人，記下誰幫誰付錢；一鍵抵銷，最少轉帳就能結清。</p></a></li>
+      <li><a class="page-card" href="pages/guide.html"><span class="tag">教學</span><h3>使用教學</h3><p>一步一步學會建立帳本、拖曳記錄代墊、還款與抵銷債務。</p></a></li>
+      <li><a class="page-card" href="pages/algorithm.html"><span class="tag">原理</span><h3>抵銷怎麼算</h3><p>用圖解說明循環互欠、債權轉移，以及為什麼 3 個人最多只要轉 2 筆。</p></a></li>
+      <li><a class="page-card" href="pages/split.html"><span class="tag">工具</span><h3>聰明分帳小工具</h3><p>輸入總額和每個人拿出的錢，算出每人應付、誰要給誰多少，以及要掏哪些鈔票。</p></a></li>
+      <li><a class="page-card" href="pages/devlog.html"><span class="tag">紀錄</span><h3>開發日誌</h3><p>EatTogether 每一版改了什麼、為什麼改。</p></a></li>
+  </ul>
+  <!-- PAGE-LIST:END -->
+</main>
+
+<footer class="site-footer" data-site-footer>
+  <div class="wrap">
+    <span>© <span data-year>2026</span> EatTogether 飯友帳本</span>
+    <a href="pages/devlog.html">開發日誌</a>
+    <a href="https://github.com/twl-Benchen/eat-together">GitHub</a>
+  </div>
+</footer>
+<script src="assets/js/site.js"></script>
+</body>
+</html>

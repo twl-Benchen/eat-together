@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>聰明分帳小工具 · EatTogether</title>
+<meta name="description" content="輸入總額和每個人拿出的錢，算出每人應付、誰要給誰多少，以及要掏哪些鈔票。">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+<header class="site-header" data-site-header>
+  <div class="wrap">
+    <a class="brand" href="../index.html"><img src="../assets/img/favicon.svg" alt=""><span><b>EatTogether</b> 飯友帳本</span></a>
+    <nav class="site-nav" aria-label="網站導覽">
+      <a href="../index.html">首頁</a>
+      <a href="../app/index.html">記帳</a>
+      <a href="../pages/guide.html">教學</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page wrap">
+  <div class="page-head">
+    <p class="eyebrow">工具</p>
+    <h1>聰明分帳小工具</h1>
+    <p class="lead">鈔票找不開時，算出最少幾筆轉帳就能結清。</p>
+  </div>
+  <div class="card" id="tool">
+    <div class="grid-2">
+      <div><label for="total">這餐總共多少</label><input class="field num" id="total" type="number" min="0" step="1" inputmode="numeric" value="580"></div>
+      <div><label for="count">幾個人吃</label><input class="field num" id="count" type="number" min="2" max="8" step="1" inputmode="numeric" value="3"></div>
+    </div>
+    <h3>每個人實際拿出多少錢</h3>
+    <p class="small muted">例如結帳時一個人掏出 1000 元整張，其他人沒付，就填 1000、0、0。</p>
+    <div id="payers" class="grid-2"></div>
+    <h3>結果</h3>
+    <div id="result" aria-live="polite"></div>
+  </div>
+
+  <h2>怎麼算的</h2>
+  <ol>
+    <li>總額除以人數就是每人應付。除不盡的零頭（最多 n−1 元）由前幾位各多付 1 元，總和剛好等於帳單。</li>
+    <li>每人的差額＝實付−應付。正的要收回、負的要再給。</li>
+    <li>用和帳本一樣的抵銷演算法（<code>Ledger.simplify</code>）配對，轉帳筆數最少。</li>
+    <li>每筆轉帳拆成新台幣面額（1000、500、100、50、10、5、1），方便直接掏錢。</li>
+  </ol>
+  <p>算完想記到帳本裡，到 <a href="../app/index.html">記帳 App</a> 把收錢的人拖到要給錢的人身上即可。</p>
+
+  <script src="../app/ledger.js"></script>
+  <script>
+    (() => {
+      const DENOMS = [1000, 500, 100, 50, 10, 5, 1];
+      const $ = (id) => document.getElementById(id);
+      const paid = [];
+      const nameOf = (i) => `第 ${i + 1} 位`;
+      function breakdown(n) {
+        const parts = [];
+        for (const d of DENOMS) { const k = Math.floor(n / d); if (k) { parts.push(`${d} 元 × ${k}`); n -= k * d; } }
+        return parts.join("、");
+      }
+      function renderInputs() {
+        const n = Math.min(8, Math.max(2, Math.round(+$("count").value || 2)));
+        const box = $("payers");
+        box.replaceChildren();
+        for (let i = 0; i < n; i++) {
+          if (paid[i] == null) paid[i] = i === 0 ? Math.round(+$("total").value || 0) : 0;
+          const wrap = document.createElement("div");
+          const label = document.createElement("label");
+          label.htmlFor = "paid-" + i; label.textContent = nameOf(i) + " 拿出";
+          const input = document.createElement("input");
+          Object.assign(input, { className: "field num", id: "paid-" + i, type: "number", min: 0, step: 1, inputMode: "numeric", value: paid[i] });
+          input.addEventListener("input", () => { paid[i] = Math.max(0, Math.round(+input.value || 0)); calc(); });
+          wrap.append(label, input);
+          box.append(wrap);
+        }
+        paid.length = n;
+        calc();
+      }
+      function calc() {
+        const total = Math.max(0, Math.round(+$("total").value || 0));
+        const n = paid.length;
+        const base = Math.floor(total / n), extra = total - base * n;
+        const share = Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0));
+        const sumPaid = paid.reduce((s, v) => s + v, 0);
+        const out = $("result");
+        out.replaceChildren();
+        const p = (text, cls) => { const el = document.createElement("p"); el.textContent = text; if (cls) el.className = cls; out.append(el); return el; };
+        p(`每人應付 $${base}` + (extra ? `（前 ${extra} 位多付 1 元）` : ""), "num");
+        if (sumPaid < total) { p(`大家拿出的錢少了 $${total - sumPaid}，還不夠付帳。`, "note"); return; }
+        const change = sumPaid - total;
+        if (change) p(`店家要找 $${change}，先找給${nameOf(paid.indexOf(Math.max(...paid)))}。`, "small muted");
+        const bal = {};
+        for (let i = 0; i < n; i++) bal[nameOf(i)] = paid[i] - share[i] - (change && i === paid.indexOf(Math.max(...paid)) ? change : 0);
+        const moves = Ledger.simplify(bal);
+        if (!moves.length) { p("剛剛好，不用互相給錢。"); return; }
+        const ul = document.createElement("ul");
+        for (const m of moves) {
+          const li = document.createElement("li");
+          li.textContent = `${m.from} 要給 ${m.to} $${m.amount}（${breakdown(m.amount)}）`;
+          ul.append(li);
+        }
+        out.append(ul);
+      }
+      $("count").addEventListener("input", renderInputs);
+      $("total").addEventListener("input", calc);
+      renderInputs();
+    })();
+  </script>
+</main>
+
+<footer class="site-footer" data-site-footer>
+  <div class="wrap">
+    <span>© <span data-year>2026</span> EatTogether 飯友帳本</span>
+    <a href="../index.html">回首頁</a>
+    <a href="../pages/devlog.html">開發日誌</a>
+  </div>
+</footer>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "site": "EatTogether 飯友帳本",
+  "pages": [
+    { "path": "app/index.html", "title": "記帳 App", "tag": "App", "summary": "把硬幣從代墊的人拖到被代墊的人，記下誰幫誰付錢；一鍵抵銷，最少轉帳就能結清。", "updated": "2026-11-05" },
+    { "path": "pages/guide.html", "title": "使用教學", "tag": "教學", "summary": "一步一步學會建立帳本、拖曳記錄代墊、還款與抵銷債務。", "updated": "2026-11-05" },
+    { "path": "pages/algorithm.html", "title": "抵銷怎麼算", "tag": "原理", "summary": "用圖解說明循環互欠、債權轉移，以及為什麼 3 個人最多只要轉 2 筆。", "updated": "2026-11-05" },
+    { "path": "pages/split.html", "title": "聰明分帳小工具", "tag": "工具", "summary": "輸入總額和每個人拿出的錢，算出每人應付、誰要給誰多少，以及要掏哪些鈔票。", "updated": "2026-11-05" },
+    { "path": "pages/devlog.html", "title": "開發日誌", "tag": "紀錄", "summary": "EatTogether 每一版改了什麼、為什麼改。", "updated": "2026-11-05" }
+  ]
+}

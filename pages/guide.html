@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>使用教學 · EatTogether</title>
+<meta name="description" content="一步一步學會建立帳本、拖曳記錄代墊、還款與抵銷債務。">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+<header class="site-header" data-site-header>
+  <div class="wrap">
+    <a class="brand" href="../index.html"><img src="../assets/img/favicon.svg" alt=""><span><b>EatTogether</b> 飯友帳本</span></a>
+    <nav class="site-nav" aria-label="網站導覽">
+      <a href="../index.html">首頁</a>
+      <a href="../app/index.html">記帳</a>
+      <a href="../pages/guide.html">教學</a>
+    </nav>
+  </div>
+</header>
+
+<main class="page wrap">
+  <div class="page-head">
+    <p class="eyebrow">教學</p>
+    <h1>使用教學</h1>
+    <p class="lead">從建立帳本到一鍵抵銷，五分鐘學會。</p>
+  </div>
+  <div class="note">在 GitHub Pages 上打開時，帳本是<b>本機模式</b>：資料只存在這支手機的瀏覽器。在 claude.ai 打開同一個 App，則會用共享資料庫，朋友的手機會即時同步。</div>
+
+  <h2>1. 建立帳本</h2>
+  <p>第一次打開 <a href="../app/index.html">記帳 App</a>，輸入帳本名稱（可以留白，預設叫「飯友帳本」）和一起吃飯的人。最少兩個人、最多八個人。</p>
+  <figure class="figure"><img src="../assets/img/guide-1.png" alt="建立帳本畫面：輸入帳本名稱與三位成員" width="390" loading="lazy"><figcaption>第一次打開時的建立畫面。</figcaption></figure>
+  <p>接著選「你是哪一位」。這只記在你自己的手機上，用來顯示「我要付、我要收」。</p>
+
+  <h2>2. 記一筆代墊</h2>
+  <p>誰先幫誰付了錢，就<b>按住代墊的人</b>，把拉出來的硬幣<b>拖到被代墊的人</b>身上放開。</p>
+  <figure class="figure"><img src="../assets/img/guide-2.png" alt="拖曳時從頭像拉出一枚硬幣，跟著手指移動" width="390" loading="lazy"><figcaption>拖曳時會拉出一枚 $ 硬幣，靠近對方時對方外圈會亮起。</figcaption></figure>
+  <p>放開後輸入金額。可以用 +10、+50（硬幣）和 +100、+500（鈔票）快速加總，再按「記下來」。</p>
+  <figure class="figure"><img src="../assets/img/guide-3.png" alt="記帳面板：代墊／還款切換、金額、數字鍵盤" width="390" loading="lazy"><figcaption>記帳面板，上方可以切換「代墊」或「還款」。</figcaption></figure>
+  <p>不想拖曳的話，<b>先點代墊的人、再點被代墊的人</b>也可以。</p>
+
+  <h2>3. 看懂關係圖</h2>
+  <p>箭頭代表<b>誰要給誰錢</b>，箭頭上的數字是金額。杏橘色是你要付的、藍灰色是你要收的、淺灰色是別人之間的。</p>
+  <figure class="figure"><img src="../assets/img/guide-4.png" alt="關係圖：三個頭像之間的箭頭與金額" width="390" loading="lazy"><figcaption>關係圖與上方的「我要付、我要收」。</figcaption></figure>
+
+  <h2>4. 還錢</h2>
+  <p>點箭頭上的金額，會打開兩人之間的明細，只列出<b>還沒還的部分</b>。可以按「全部還清」或「還一部分」。</p>
+
+  <h2>5. 抵銷債務</h2>
+  <p>三個人互相欠來欠去時，「抵銷債務」按鈕會亮起來，並寫著可以少轉幾筆。按下去會先看到抵銷前後的比較，確認後才會改帳。每個人最後要付、要收的總額都不變。原理請看 <a href="algorithm.html">抵銷怎麼算</a>。</p>
+  <figure class="figure"><img src="../assets/img/guide-5.png" alt="抵銷預覽：阿傑欠小華的 80 元轉成直接給小明，總共少流動 80 元" width="390" loading="lazy"><figcaption>抵銷前的預覽：阿傑欠小華的 $80 轉成直接給小明，小華只要再給小明 $40，總共少流動 $80。</figcaption></figure>
+  <p>抵銷 3 天內可以在「紀錄」撤銷；滿 3 天後，之前的紀錄會自動整理成一筆「結算」。</p>
+
+  <h2>6. 備份（本機模式）</h2>
+  <p>到「成員」頁按「匯出備份」，會下載一個 JSON 檔。換手機時在新手機按「匯入備份」就能還原。</p>
+</main>
+
+<footer class="site-footer" data-site-footer>
+  <div class="wrap">
+    <span>© <span data-year>2026</span> EatTogether 飯友帳本</span>
+    <a href="../index.html">回首頁</a>
+    <a href="../pages/devlog.html">開發日誌</a>
+  </div>
+</footer>
+<script src="../assets/js/site.js"></script>
+</body>
+</html>
